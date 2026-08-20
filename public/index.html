@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Flex Standard | Become Your Standard. Live The Flex.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        .text-gold-gradient { background: linear-gradient(135deg, #FFF0B3 0%, #E5C158 35%, #D4AF37 70%, #997514 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gold-border { border: 1px solid rgba(212, 175, 55, 0.4); box-shadow: 0 0 15px rgba(212, 175, 55, 0.15); }
+        .hero-glow { background: radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.12) 0%, rgba(0,0,0,1) 70%); }
+    </style>
+</head>
+<body class="bg-black text-gray-200 font-sans antialiased min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
+    <header class="sticky top-0 z-40 bg-black/90 backdrop-blur-md border-b border-amber-500/20 px-4 lg:px-12 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="#" class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full border border-amber-500/40 bg-black flex items-center justify-center overflow-hidden"><span class="text-amber-400 font-extrabold text-sm">FS</span></div>
+                <span class="font-extrabold text-lg sm:text-xl tracking-wider text-gold-gradient uppercase">THE FLEX STANDARD</span>
+            </a>
+            <div class="flex items-center gap-4"><button onclick="openLoginModal()" class="px-5 py-2 rounded bg-gradient-to-r from-amber-500 to-amber-600 text-black font-extrabold uppercase tracking-wider text-xs shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:scale-105 transition-all"><i class="fa-solid fa-lock mr-1.5"></i> Member Login</button></div>
+        </div>
+    </header>
+    <main class="flex-1 relative overflow-hidden bg-black hero-glow flex flex-col justify-center items-center py-10 px-4">
+        <div class="max-w-5xl w-full text-center space-y-6">
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight leading-tight"><span class="block text-white">BECOME</span><span class="block text-gold-gradient">YOUR STANDARD.</span><span class="block text-gold-gradient">LIVE THE FLEX.</span></h1>
+            <p class="text-amber-300 font-bold tracking-[0.25em] text-xs sm:text-sm uppercase">FOCUS. LEARN. EXECUTE. EXCEL.</p>
+            <div class="w-full max-w-2xl mx-auto rounded-2xl overflow-hidden gold-border bg-black mt-6"><img src="hero-banner.png" alt="The Flex Standard Hero Banner" class="w-full h-auto object-contain block" /></div>
+            <div class="pt-4"><button onclick="openLoginModal()" class="px-8 py-3.5 rounded bg-gradient-to-r from-amber-500 to-amber-600 text-black font-extrabold uppercase tracking-wider text-sm shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:scale-105 transition-all">Enter Member Portal</button></div>
+        </div>
+    </main>
+    <div id="loginModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="relative bg-zinc-950 border border-amber-500/40 rounded-2xl max-w-md w-full overflow-hidden shadow-[0_0_50px_rgba(212,175,55,0.2)]">
+            <button onclick="closeLoginModal()" class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/80 text-gray-400 hover:text-amber-400 flex items-center justify-center border border-amber-500/20"><i class="fa-solid fa-xmark"></i></button>
+            <div class="w-full bg-black border-b border-amber-500/20 overflow-hidden"><img src="hero-banner.png" alt="The Flex Standard" class="w-full h-auto object-cover" /></div>
+            <div class="p-6 space-y-4"><div class="text-center"><h2 class="text-xl font-extrabold uppercase tracking-wider text-gold-gradient">Member Access</h2><p class="text-xs text-gray-400 mt-1">Sign in to track your challenges and progress.</p></div><form onsubmit="handleLogin(event)" class="space-y-4 pt-2"><div><label class="block text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-1">Email Address</label><input type="email" required placeholder="you@theflexstandard.com" class="w-full px-4 py-2.5 rounded bg-black border border-zinc-800 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 text-sm" /></div><div><label class="block text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-1">Password</label><input type="password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded bg-black border border-zinc-800 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 text-sm" /></div><button type="submit" class="w-full py-3 rounded bg-gradient-to-r from-amber-500 to-amber-600 text-black font-extrabold uppercase tracking-wider text-xs shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:scale-[1.02] transition-all">Sign In</button></form></div>
+        </div>
+    </div>
+    <script>
+        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+        function handleLogin(e) { e.preventDefault(); alert('Logging in to The Flex Standard...'); }
+    </script>
+</body>
+</html>
