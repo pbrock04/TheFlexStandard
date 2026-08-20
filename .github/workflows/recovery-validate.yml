@@ -1,0 +1,29 @@
+name: Recovery Validate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required files
+        shell: bash
+        run: |
+          test -f wrangler.jsonc
+          test -f public/index.html
+          if grep -q '"name": "flex-standard"' wrangler.jsonc; then
+            echo "Refusing validation: recovery config must not target production Worker name."
+            exit 1
+          fi
+
+      - name: Wrangler dry run only
+        run: npx wrangler@latest deploy --dry-run --config wrangler.jsonc
