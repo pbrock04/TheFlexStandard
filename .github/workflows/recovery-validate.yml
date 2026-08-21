@@ -1,4 +1,4 @@
-name: Recovery Validate
+name: Production Alignment Validate
 
 on:
   pull_request:
@@ -15,13 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify required files
+      - name: Verify aligned production configuration
         shell: bash
         run: |
           test -f wrangler.jsonc
           test -f public/index.html
-          if grep -q '"name": "flex-standard"' wrangler.jsonc; then
-            echo "Refusing validation: recovery config must not target production Worker name."
+          test -f src/index.js
+          test -f migrations/0001_generalized_challenges.sql
+          grep -q '"name": "the-flex-standard"' wrangler.jsonc
+          grep -q '"main": "src/index.js"' wrangler.jsonc
+          grep -q '"binding": "DB"' wrangler.jsonc
+          grep -q '"database_name": "flex-standard-db"' wrangler.jsonc
+          grep -q '"database_id": "64964ca4-4517-4adb-8da4-cf6e0fd97003"' wrangler.jsonc
+          if grep -Eq '"routes?"|theflexstandard\.com' wrangler.jsonc; then
+            echo "Refusing validation: production route must remain unattached until the explicit deployment gate."
             exit 1
           fi
 
