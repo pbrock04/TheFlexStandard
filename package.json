@@ -1,0 +1,12 @@
+{
+  "name": "the-flex-standard",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
+}

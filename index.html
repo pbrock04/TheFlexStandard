@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang=\'en\'>
+<head>
+    <meta charset=\'UTF-8\' />
+    <meta name=\'viewport\' content=\'width=device-width, initial-scale=1.0\' />
+    <title>The Flex Standard | Challenges</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; }
+        .container { max-width: 600px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        h1 { color: #38bdf8; text-align: center; }
+        .tier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; }
+        .tier-card { background: #334155; padding: 20px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .tier-card:hover { border-color: #38bdf8; }
+        button { background: #0ea5e9; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 20px; width: 100%; }
+        button:hover { background: #0284c7; }
+        #status { margin-top: 15px; text-align: center; font-size: 14px; color: #34d399; }
+    </style>
+</head>
+<body>
+    <div class=\'container\'>
+        <h1>The Flex Standard</h1>
+        <p style=\'text-align: center; color: #94a3b8;\'>Select your challenge tier to begin:</p>
+        
+        <div class=\'tier-grid\'>
+            <div class=\'tier-card\' onclick=\'selectTier(7)\'><h3>7 Days</h3><p>Ignition</p></div>
+            <div class=\'tier-card\' onclick=\'selectTier(14)\'><h3>14 Days</h3><p>Momentum</p></div>
+            <div class=\'tier-card\' onclick=\'selectTier(21)\'><h3>21 Days</h3><p>Habit Form</p></div>
+            <div class=\'tier-card\' onclick=\'selectTier(28)\'><h3>28 Days</h3><p>Mastery</p></div>
+        </div>
+
+        <button onclick=\'joinChallenge()\'>Start Selected Challenge</button>
+        <div id=\'status\'></div>
+    </div>
+
+    <script>
+        let selectedTier = null;
+
+        function selectTier(days) {
+            selectedTier = days;
+            document.querySelectorAll('.tier-card').forEach(c => c.style.borderColor = 'transparent');
+            event.currentTarget.style.borderColor = '#38bdf8';
+        }
+
+        async function joinChallenge() {
+            if (!selectedTier) {
+                alert('Please select a challenge tier first.');
+                return;
+            }
+
+            const userId = 'user_' + Math.random().toString(36).substr(2, 9); // Simple mock user for testing
+
+            try {
+                const response = await window.location.origin + '/api/progress';
+                // Simulated check-in call structure
+                document.getElementById('status').innerText = 'Successfully enrolled in the ' + selectedTier + '-Day Challenge!';
+            } catch (err) {
+                document.getElementById('status').innerText = 'Error connecting to backend.';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+name = "the-flex-standard"
+main = "src/index.js"
+compatibility_date = "2026-08-18"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "flex-standard-db"
+database_id = "64964ca4-4517-4adb-8da4-cf6e0fd97003"
+migrations_dir = "migrations"
