@@ -1,4 +1,4 @@
-name: Deploy Team Flex Worker
+﻿name: Deploy Team Flex Worker
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
       - 'test/**'
       - 'wrangler.toml'
       - 'package.json'
+      - '.github/workflows/**'
+  workflow_dispatch:
 
 jobs:
   test-and-deploy:

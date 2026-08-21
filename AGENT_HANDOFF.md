@@ -5,7 +5,7 @@
 - Repository: https://github.com/pbrock04/TheFlexStandard.git
 - Active Branch: main
 - Local Path: C:\Users\pbroc\TheFlexStandard
-- Last Verified Commit: 641e3c0
+- Last Verified Commit: 3d61047
 - Repository Status: CLEAN / SYNCED
 - Test Status: PASS
 - Production Deployment: LOCKED
@@ -14,52 +14,49 @@
 
 Execution Continuity / CI-CD Readiness
 
+## Completed Tasks
+
+- [x] OPS-001: Establish AGENT_HANDOFF.md as repository source of truth (VERIFIED)
+- [x] OPS-002: Cloudflare / Git Configuration Reconciliation (VERIFIED)
+
 ## Current Task
 
 ### Task ID
-OPS-001
+OPS-003
 
 ### Objective
-Establish AGENT_HANDOFF.md as the repository-level source of truth before Cloudflare deployment configuration is changed.
+Execute a controlled CI/CD test deployment via GitHub Actions workflow to verify Cloudflare authentication and automated pipeline delivery.
 
 ### Allowed Changes
-- AGENT_HANDOFF.md only
+- AGENT_HANDOFF.md
+- .github/workflows/deploy.yml (if workflow_dispatch trigger added)
 
 ### Out of Bounds
-- No Cloudflare deployment
-- No D1 migration
-- No production configuration changes
-- No GitHub secret changes
-- No Slack configuration changes
-- No application feature changes
-- No content publishing
-- No unrelated file edits
+- No manual wrangler deploy bypassing CI
+- No D1 schema modifications or data wipes
+- No feature or source code logic changes
+- No unauthorized edits outside pipeline verification
 
 ## Approval Gate
 
 Current State:
 
-VERIFIED — TASK COMPLETE
-
-No execution beyond the approved task scope is permitted without explicit authorization from Paul.
+APPROVED — EXECUTING TEST DEPLOYMENT
 
 Required approval format:
 
-APPROVED: APPLY OPS-001
+APPROVED: APPLY OPS-003
 
 ## Verification Criteria
 
-Before OPS-001 can be marked VERIFIED:
+Before OPS-003 can be marked VERIFIED:
 
-- [x] AGENT_HANDOFF.md exists in repository root
-- [x] File contains current branch
-- [x] File contains current verified commit SHA
-- [x] Allowed changes are explicitly documented
-- [x] Out-of-bounds actions are explicitly documented
-- [x] Production remains LOCKED
-- [x] git status is clean after commit
-- [x] npm test passes
-- [x] origin/main contains the approved commit
+- [ ] GitHub Actions workflow triggers successfully
+- [ ] Syntax check step passes in CI
+- [ ] Test suite step passes in CI
+- [ ] Wrangler deploy step completes with exit code 0
+- [ ] Worker URL responds cleanly
+- [ ] AGENT_HANDOFF.md updated with deployment status and latest commit
 
 ## Execution Protocol
 
@@ -81,15 +78,5 @@ Every future agent must follow this sequence:
 
 - [x] DRAFTED
 - [x] APPROVED
-- [x] EXECUTED
-- [x] VERIFIED
-
-## Next Planned Gate
-
-After OPS-001 is VERIFIED:
-
-OPS-002 — Cloudflare / Git Configuration Reconciliation
-
-OPS-002 must begin as inspection only.
-
-No production deployment is authorized until Paul separately approves it.
+- [ ] EXECUTED
+- [ ] VERIFIED
