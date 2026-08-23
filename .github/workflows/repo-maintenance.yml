@@ -1,0 +1,48 @@
+name: Repository Maintenance
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/repo-maintenance.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Regenerate lockfile
+        run: npm install
+
+      - name: Clean install verification
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Commit aligned lockfile if changed
+        shell: bash
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json already aligned; no commit needed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "fix: align package-lock.json with cleaned dependencies"
+          git push origin HEAD:main
