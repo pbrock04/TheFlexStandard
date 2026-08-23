@@ -4,230 +4,36 @@ export default {
 
     if (url.pathname === '/hero-banner.png') {
       const asset = await fetch('https://raw.githubusercontent.com/pbrock04/TheFlexStandard/main/hero-banner.png');
-
-      if (!asset.ok || !asset.body) {
-        return new Response('Hero banner unavailable', { status: 502 });
-      }
-
-      return new Response(asset.body, {
-        status: 200,
-        headers: {
-          'content-type': 'image/png',
-          'cache-control': 'public, max-age=86400'
-        }
-      });
+      if (!asset.ok || !asset.body) return new Response('Hero banner unavailable', { status: 502 });
+      return new Response(asset.body, { status: 200, headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' } });
     }
 
     const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Flex Standard – Focus. Learn. Execute. Excel.</title>
-  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-  <style>
-    :root {
-      --bg: #0a0a0a;
-      --card: #141414;
-      --soft: #1a1a1a;
-      --border: #262626;
-      --gold: #d4af37;
-      --gold2: #b8860b;
-      --text: #ededed;
-      --muted: #a1a1a1;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      line-height: 1.6;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-    .nav {
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: rgba(10, 10, 10, 0.95);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .brand {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      color: var(--gold);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    main {
-      flex: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-      width: 100%;
-    }
-    .hero {
-      text-align: center;
-      margin-bottom: 3.5rem;
-    }
-    .hero-banner-container {
-      width: 100%;
-      margin-bottom: 2rem;
-      display: flex;
-      justify-content: center;
-      overflow: hidden;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background-color: #0b0806;
-    }
-    .hero-banner-img {
-      width: 100%;
-      max-width: 1100px;
-      height: auto;
-      display: block;
-    }
-    .badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      background: var(--soft);
-      border: 1px solid var(--border);
-      color: var(--gold);
-      border-radius: 999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      letter-spacing: -0.02em;
-    }
-    .section {
-      margin-bottom: 3rem;
-    }
-    .heading {
-      font-size: 1.75rem;
-      color: var(--gold);
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-    .challenge-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 2rem;
-      margin-top: 1.5rem;
-    }
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.875rem;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="nav">
-      <a href="/" class="brand">THE FLEX STANDARD</a>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div class="hero-banner-container">
-        <img 
-          src="/hero-banner.png" 
-          alt="The Flex Standard - Become Your Standard, Live the Flex" 
-          class="hero-banner-img"
-        />
-      </div>
-      <div class="badge">Free 7-Day Foundation</div>
-      <h1>Focus. Learn. Execute. Excel.</h1>
-    </section>
-
-    <section class="section" id="standard">
-      <h2 class="heading">The F.L.E.X. Standard</h2>
-      <div class="challenge-card">
-        <p style="text-align: center; color: var(--muted);">
-          Building discipline, mental focus, physical strength, and financial independence.
-        </p>
-      </div>
-    </section>
-
-    <section class="challenge" id="kickstart">
-      <div class="challenge-card">
-        <h3 style="color: var(--gold); margin-bottom: 1rem;">7-Day Kickstart Challenge</h3>
-        <p style="color: var(--muted); margin-bottom: 1.5rem;">
-          Track your daily foundation tasks and build consistency one day at a time.
-        </p>
-        <div id="tasks-list"></div>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <p>&copy; 2026 The Flex Standard. All rights reserved.</p>
-  </footer>
-
-  <script>
-    const KEY = 'flexstandard.kickstart7.v1';
-    const DATA = [
-      'Set Your Daily Non-Negotiable',
-      '10-Minute Mindset & Focus Session',
-      'Physical Movement & Strength Drill',
-      'Financial Discipline Habit',
-      'Execute Key Priority Milestone',
-      'Reflect, Review & Log Growth',
-      'Lock in the Weekly Standard'
-    ];
-
-    const container = document.getElementById('tasks-list');
-    if (container) {
-      const list = document.createElement('ul');
-      list.style.listStyle = 'none';
-      list.style.padding = '0';
-
-      DATA.forEach((task, index) => {
-        const item = document.createElement('li');
-        item.style.padding = '0.75rem 0';
-        item.style.borderBottom = '1px solid var(--border)';
-        item.style.display = 'flex';
-        item.style.alignItems = 'center';
-        item.style.gap = '0.75rem';
-
-        item.innerHTML = '<span style="color: var(--gold); font-weight: bold;">Day ' + (index + 1) + ':</span> <span>' + task + '</span>';
-        list.appendChild(item);
-      });
-
-      container.appendChild(list);
-    }
-  </script>
-</body>
-</html>`;
-
-    return new Response(html, {
-      status: 200,
-      headers: { 'content-type': 'text/html; charset=utf-8' }
-    });
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Flex Standard – Focus. Learn. Execute. Excel.</title><meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<style>
+:root{--bg:#0a0a0a;--card:#141414;--soft:#1a1a1a;--border:#262626;--gold:#d4af37;--gold2:#b8860b;--text:#ededed;--muted:#a1a1a1;--ease:cubic-bezier(.2,.8,.2,1)}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;min-height:100vh;overflow-x:hidden}a{color:inherit;text-decoration:none}
+.nav{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,10,.82);backdrop-filter:blur(14px);position:sticky;top:0;z-index:100}.brand{font-size:1.25rem;font-weight:800;letter-spacing:.05em;color:var(--gold);transition:filter .25s,transform .25s}.brand:hover{filter:drop-shadow(0 0 8px rgba(212,175,55,.45));transform:translateY(-1px)}
+main{max-width:1200px;margin:0 auto;padding:2rem 1rem;width:100%}.hero{text-align:center;margin-bottom:4.5rem}.hero-banner-container{width:100%;margin-bottom:2rem;display:flex;justify-content:center;overflow:hidden;border-radius:12px;border:1px solid var(--border);background:#0b0806}.hero-banner-img{width:100%;max-width:1100px;height:auto;display:block}.badge{display:inline-block;padding:.25rem .75rem;background:var(--soft);border:1px solid var(--border);color:var(--gold);border-radius:999px;font-size:.875rem;font-weight:600;margin-bottom:1rem;text-transform:uppercase;letter-spacing:.05em}h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:800;margin-bottom:1rem;letter-spacing:-.02em}
+.section{margin-bottom:5rem;position:relative}.heading{font-size:clamp(1.7rem,5vw,2.4rem);color:var(--gold);margin-bottom:1rem;text-align:center}.sub{text-align:center;color:var(--muted);max-width:680px;margin:0 auto 2rem}.reveal{opacity:0;transform:translateY(28px);transition:opacity .75s var(--ease),transform .75s var(--ease)}.reveal.visible{opacity:1;transform:none}
+.flex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}.flex-card,.challenge-card{background:linear-gradient(145deg,var(--card),#101010);border:1px solid var(--border);border-radius:16px;padding:1.6rem;position:relative;overflow:hidden;transition:transform .3s var(--ease),border-color .3s,box-shadow .3s}.flex-card:before,.challenge-card:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(212,175,55,.10),transparent 48%);opacity:0;transition:opacity .3s}.flex-card:hover,.challenge-card:hover{transform:translateY(-5px);border-color:rgba(212,175,55,.55);box-shadow:0 14px 35px rgba(0,0,0,.32)}.flex-card:hover:before,.challenge-card:hover:before{opacity:1}.letter{font-size:2.3rem;font-weight:900;color:var(--gold);line-height:1}.flex-card h3{margin:.45rem 0}.flex-card p{color:var(--muted);font-size:.94rem}
+.journey{max-width:820px;margin:0 auto;position:relative}.journey:before{content:'';position:absolute;left:25px;top:28px;bottom:28px;width:2px;background:var(--border)}.journey-fill{position:absolute;left:25px;top:28px;width:2px;height:0;background:linear-gradient(var(--gold),var(--gold2));box-shadow:0 0 10px rgba(212,175,55,.6);transition:height .15s linear}.tier{display:grid;grid-template-columns:52px 1fr;gap:1rem;align-items:center;margin:1rem 0;position:relative}.node{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:var(--bg);margin:auto;z-index:2;transition:.35s}.tier.active .node{border-color:var(--gold);background:var(--gold);box-shadow:0 0 16px rgba(212,175,55,.55)}.tier-card{padding:1.2rem 1.4rem;background:var(--card);border:1px solid var(--border);border-radius:14px;transition:.35s}.tier.active .tier-card{border-color:rgba(212,175,55,.45);transform:translateX(4px)}.tier-card strong{color:var(--gold)}.tier-card span{color:var(--muted);display:block;font-size:.9rem}.lock{opacity:.58}
+.challenge-card{margin-top:1.5rem;padding:2rem}.task{padding:.8rem 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem}.day{color:var(--gold);font-weight:700}.cta{text-align:center;margin:5rem 0 2rem;padding:3rem 1.5rem;border:1px solid var(--border);border-radius:18px;background:radial-gradient(circle at 50% 0%,rgba(212,175,55,.12),transparent 55%),var(--card)}.cta a{display:inline-block;margin-top:1.3rem;background:var(--gold);color:#080808;padding:.85rem 1.35rem;border-radius:999px;font-weight:800;transition:transform .25s,box-shadow .25s}.cta a:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 30px rgba(212,175,55,.22)}footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.875rem}
+@media(max-width:760px){.nav{padding:.9rem 1rem}.flex-grid{grid-template-columns:1fr 1fr}.hero{margin-bottom:3.5rem}.section{margin-bottom:4rem}}@media(max-width:480px){.flex-grid{grid-template-columns:1fr}.flex-card:hover,.challenge-card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style></head><body>
+<header><div class="nav"><a href="/" class="brand">THE FLEX STANDARD</a></div></header><main>
+<section class="hero"><div class="hero-banner-container"><img src="/hero-banner.png" alt="The Flex Standard - Become Your Standard, Live the Flex" class="hero-banner-img"></div><div class="badge">Free 7-Day Foundation</div><h1>Focus. Learn. Execute. Excel.</h1></section>
+<section class="section reveal" id="standard"><h2 class="heading">The F.L.E.X. Standard</h2><p class="sub">Four principles. One standard. Build yourself one deliberate action at a time.</p><div class="flex-grid"><article class="flex-card"><div class="letter">F</div><h3>Focus</h3><p>Choose what matters. Cut the noise. Set the target.</p></article><article class="flex-card"><div class="letter">L</div><h3>Learn</h3><p>Build knowledge, awareness, and the skills to move forward.</p></article><article class="flex-card"><div class="letter">E</div><h3>Execute</h3><p>Turn intention into action. Do the work when it counts.</p></article><article class="flex-card"><div class="letter">X</div><h3>eXcel</h3><p>Repeat the standard. Improve it. Become who you said you would be.</p></article></div></section>
+<section class="section reveal" id="journey"><h2 class="heading">Your FLEX Journey</h2><p class="sub">Start with seven days. Build momentum. Lock in the habit. Earn the next level.</p><div class="journey" id="journeyTrack"><div class="journey-fill" id="journeyFill"></div><div class="tier"><div class="node"></div><div class="tier-card"><strong>7-Day Foundation</strong><span>Start small. Establish your daily standard.</span></div></div><div class="tier"><div class="node"></div><div class="tier-card"><strong>14-Day Momentum</strong><span>Build on the foundation and keep moving.</span></div></div><div class="tier"><div class="node"></div><div class="tier-card"><strong>21-Day Habit Lock</strong><span>Turn consistent action into a repeatable discipline.</span></div></div><div class="tier lock"><div class="node"></div><div class="tier-card"><strong>28-Day Mastery 🔒</strong><span>Complete the free path to unlock the next level.</span></div></div></div></section>
+<section class="section reveal" id="kickstart"><h2 class="heading">Start Your Foundation</h2><div class="challenge-card"><h3 style="color:var(--gold);margin-bottom:1rem">7-Day Kickstart Challenge</h3><p style="color:var(--muted);margin-bottom:1.5rem">Track your daily foundation tasks and build consistency one day at a time.</p><div id="tasks-list"></div></div></section>
+<section class="cta reveal"><h2>Become Your Standard.</h2><p style="color:var(--muted);margin-top:.5rem">Seven days. One decision each day. Start building the person you want to become.</p><a href="#kickstart">START THE FREE 7-DAY CHALLENGE</a></section>
+</main><footer><p>&copy; 2026 The Flex Standard. All rights reserved.</p></footer>
+<script>
+const DATA=['Set Your Daily Non-Negotiable','10-Minute Mindset & Focus Session','Physical Movement & Strength Drill','Financial Discipline Habit','Execute Key Priority Milestone','Reflect, Review & Log Growth','Lock in the Weekly Standard'];const container=document.getElementById('tasks-list');if(container){DATA.forEach((task,index)=>{const item=document.createElement('div');item.className='task';item.innerHTML='<span class="day">Day '+(index+1)+':</span><span>'+task+'</span>';container.appendChild(item)})}
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!reduced){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.12});document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));const track=document.getElementById('journeyTrack'),fill=document.getElementById('journeyFill'),tiers=[...document.querySelectorAll('.tier')];function updateJourney(){const r=track.getBoundingClientRect(),vh=innerHeight;const p=Math.max(0,Math.min(1,(vh*.72-r.top)/(r.height*.82)));fill.style.height=(p*(r.height-56))+'px';tiers.forEach((t,i)=>t.classList.toggle('active',p>i/(tiers.length-.25)))}addEventListener('scroll',updateJourney,{passive:true});updateJourney()}else{document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));document.querySelectorAll('.tier').forEach(el=>el.classList.add('active'))}
+</script></body></html>`;
+    return new Response(html, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
   }
 };
