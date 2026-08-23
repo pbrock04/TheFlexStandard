@@ -1,5 +1,23 @@
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/hero-banner.png') {
+      const asset = await fetch('https://raw.githubusercontent.com/pbrock04/TheFlexStandard/main/hero-banner.png');
+
+      if (!asset.ok || !asset.body) {
+        return new Response('Hero banner unavailable', { status: 502 });
+      }
+
+      return new Response(asset.body, {
+        status: 200,
+        headers: {
+          'content-type': 'image/png',
+          'cache-control': 'public, max-age=86400'
+        }
+      });
+    }
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
