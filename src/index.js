@@ -14,14 +14,14 @@ export default {
       });
     }
 
-    if (url.pathname === '/flex-hero-web.mp4') {
+    if (url.pathname === '/flex-hero-web-v3.mp4') {
       const asset = await fetch('https://raw.githubusercontent.com/pbrock04/TheFlexStandard/main/192600068_1787486128199387%20(1).mp4');
       if (!asset.ok || !asset.body) return new Response('Hero video unavailable', { status: 502 });
       return new Response(asset.body, {
         status: 200,
         headers: {
           'content-type': 'video/mp4',
-          'cache-control': 'public, max-age=86400'
+          'cache-control': 'no-store, max-age=0'
         }
       });
     }
@@ -32,7 +32,7 @@ export default {
       ? `<section class="standard-hero reveal visible"><div class="badge">THE FLEX STANDARD</div><h1>Focus. Learn. Execute. <span class="gold">eXcel.</span></h1><p class="sub">Four principles. One standard. Build yourself one deliberate action at a time.</p></section>
 <section class="section reveal visible" id="standard"><div class="flex-grid"><article class="flex-card"><div class="letter">F</div><h3>Focus</h3><p>Choose what matters. Cut the noise. Set the target.</p></article><article class="flex-card"><div class="letter">L</div><h3>Learn</h3><p>Build knowledge, awareness, and the skills to move forward.</p></article><article class="flex-card"><div class="letter">E</div><h3>Execute</h3><p>Turn intention into action. Do the work when it counts.</p></article><article class="flex-card"><div class="letter">X</div><h3>eXcel</h3><p>Repeat the standard. Improve it. Become who you said you would be.</p></article></div></section>
 <section class="cta reveal visible"><h2>Live The Standard.</h2><p style="color:var(--muted);margin-top:.5rem">Know the principles. Put them into practice one day at a time.</p><a href="/">BACK TO HOME</a></section>`
-      : `<section class="hero"><div class="hero-banner-container"><img src="/hero-banner.png" alt="The Flex Standard - Become Your Standard, Live the Flex" class="hero-banner-img"></div><div class="hero-video-container"><video class="hero-video" autoplay muted loop playsinline preload="metadata"><source src="/flex-hero-web.mp4" type="video/mp4"></video></div><div class="badge">Free 7-Day Foundation</div><h1>Focus. Learn. Execute. Excel.</h1></section>
+      : `<section class="hero"><div class="hero-banner-container"><img src="/hero-banner.png" alt="The Flex Standard - Become Your Standard, Live the Flex" class="hero-banner-img"></div><div class="hero-video-container"><video class="hero-video" autoplay muted loop playsinline preload="metadata"><source src="/flex-hero-web-v3.mp4" type="video/mp4"></video></div><div class="badge">Free 7-Day Foundation</div><h1>Focus. Learn. Execute. Excel.</h1></section>
 <section class="section reveal" id="journey"><h2 class="heading">Your FLEX Journey</h2><p class="sub">Start with seven days. Build momentum. Lock in the habit. Earn the next level.</p><div class="journey" id="journeyTrack"><div class="journey-fill" id="journeyFill"></div><div class="tier"><div class="node"></div><div class="tier-card"><strong>7-Day Foundation</strong><span>Start small. Establish your daily standard.</span></div></div><div class="tier"><div class="node"></div><div class="tier-card"><strong>14-Day Momentum</strong><span>Build on the foundation and keep moving.</span></div></div><div class="tier"><div class="node"></div><div class="tier-card"><strong>21-Day Habit Lock</strong><span>Turn consistent action into a repeatable discipline.</span></div></div><div class="tier lock"><div class="node"></div><div class="tier-card"><strong>28-Day Mastery 🔒</strong><span>Complete the free path to unlock the next level.</span></div></div></div></section>
 <section class="cta reveal"><h2>Become Your Standard.</h2><p style="color:var(--muted);margin-top:.5rem">Seven days. One decision each day. Start building the person you want to become.</p><a href="#journey">START THE FREE 7-DAY CHALLENGE</a></section>`;
 
