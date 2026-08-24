@@ -15,7 +15,7 @@ export default {
     }
 
     if (url.pathname === '/flex-hero-web.mp4') {
-      const asset = await fetch('https://raw.githubusercontent.com/pbrock04/TheFlexStandard/main/60463975_1787551879977651.mp4');
+      const asset = await fetch('https://raw.githubusercontent.com/pbrock04/TheFlexStandard/main/192600068_1787486128199387%20(1).mp4');
       if (!asset.ok || !asset.body) return new Response('Hero video unavailable', { status: 502 });
       return new Response(asset.body, {
         status: 200,
