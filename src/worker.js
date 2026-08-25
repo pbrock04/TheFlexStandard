@@ -1,4 +1,5 @@
 import app from './index.js';
+import { challenge14Page } from './challenge14.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -68,6 +69,10 @@ export default {
 
     if (request.method === 'GET' && (url.pathname === '/momentum' || url.pathname === '/momentum/')) {
       return new Response(momentumPage(), { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
+    }
+
+    if (request.method === 'GET' && (url.pathname === '/challenges/14-day-get-active' || url.pathname === '/challenges/14-day-get-active/')) {
+      return new Response(challenge14Page(), { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
     }
 
     const response = await app.fetch(request, env, ctx);
