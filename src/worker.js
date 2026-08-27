@@ -7,6 +7,40 @@ import { challenge28Page } from './challenge28.js';
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
+function cleanHeader(value) {
+  return String(value || '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+async function notifyOptionalLead(env, { name, email, now }) {
+  if (!env.PARTICIPANT_NOTIFY) return;
+  const safeName = cleanHeader(name) || 'Not provided';
+  const safeEmail = cleanHeader(email);
+  const timestamp = new Date(now).toISOString();
+  const subject = 'Flex Standard: 7-Day participant continued';
+  const body = [
+    'A participant completed the 7-Day Foundation and chose Save & Continue.',
+    '',
+    `Name: ${safeName}`,
+    `Email: ${safeEmail}`,
+    'Next challenge: 14-Day Momentum',
+    `Time: ${timestamp}`,
+    '',
+    'This notification contains private participant information. Do not forward or share it unnecessarily.'
+  ].join('\r\n');
+  const raw = [
+    'From: The Flex Standard <flex@theflexstandard.com>',
+    'To: pbrock04@gmail.com',
+    `Subject: ${subject}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    body
+  ].join('\r\n');
+  const message = new EmailMessage('flex@theflexstandard.com', 'pbrock04@gmail.com', raw);
+  await env.PARTICIPANT_NOTIFY.send(message);
+}
+
 async function saveOptionalLead(request, env) {
   if (!env.DB) return json({ ok: false, error: 'Lead storage is unavailable.' }, 503);
   let body;
@@ -18,6 +52,11 @@ async function saveOptionalLead(request, env) {
   try {
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS optional_leads (id TEXT PRIMARY KEY,name TEXT,email TEXT NOT NULL UNIQUE,source TEXT NOT NULL DEFAULT '7-day-completion',created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)`).run();
     await env.DB.prepare(`INSERT INTO optional_leads (id,name,email,source,created_at,updated_at) VALUES (?,?,?,'7-day-completion',?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name,updated_at=excluded.updated_at`).bind(crypto.randomUUID(), name || null, email, now, now).run();
+    try {
+      await notifyOptionalLead(env, { name, email, now });
+    } catch (e) {
+      console.error('optional_lead_notification_failed', e);
+    }
     return json({ ok: true });
   } catch (e) {
     console.error('optional_lead_save_failed', e);
