@@ -11,3 +11,7 @@ binding = "DB"
 database_name = "flex-standard-db"
 database_id = "64964ca4-4517-4adb-8da4-cf6e0fd97003"
 migrations_dir = "migrations"
+
+[[send_email]]
+name = "PARTICIPANT_NOTIFY"
+destination_address = "pbrock04@gmail.com"
