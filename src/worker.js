@@ -5,6 +5,18 @@ import { challenge21Page } from './challenge21.js';
 import { challenge28Page } from './challenge28.js';
 import { ensureMasteryProfile, completeMasteryAction, getMasteryDashboard } from './masteryApi.js';
 import { submitFlexProof, updateFlexProofSpotlightConsent } from './masteryProofApi.js';
+import {
+  createMasteryCheckout,
+  handleStripeWebhook,
+  hasMasteryAccess,
+  masteryAccessStatus,
+  masteryCancelPage,
+  masteryCheckoutPage,
+  masteryContentResponse,
+  masteryGatePage,
+  masteryPaymentsEnabled,
+  masterySuccessPage,
+} from './masteryPayments.js';
 
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -177,13 +189,24 @@ async function sevenDayResponse(request, env, ctx) {
   return new Response(source, { status: response.status, headers });
 }
 
+async function paidMasteryApiAllowed(request, env) {
+  if (!env?.DB) return false;
+  const userId = masteryUserId(request);
+  return userId ? hasMasteryAccess(env.DB, userId) : false;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const p = url.pathname.replace(/\/$/, '') || '/';
 
-    if (p.startsWith('/api/mastery/') && !masteryIsOpen(env)) {
-      return json({ ok: false, error: '28-Day Mastery is not open for participant access yet.' }, 403);
+    if (request.method === 'POST' && p === '/api/stripe/webhook') return handleStripeWebhook(request, env);
+    if (request.method === 'POST' && p === '/api/mastery/checkout') return createMasteryCheckout(request, env);
+    if (request.method === 'GET' && p === '/api/mastery/access') return masteryAccessStatus(request, env);
+    if (request.method === 'GET' && p === '/api/mastery/content') return masteryContentResponse(request, env, challenge28Page);
+
+    if (p.startsWith('/api/mastery/') && !(await paidMasteryApiAllowed(request, env))) {
+      return json({ ok: false, error: 'Paid 28-Day Mastery access is required.' }, 403);
     }
     if (p === '/api/mastery/proof' || p === '/api/mastery/proof/spotlight') {
       const response = await masteryProofRoute(request, env, p);
@@ -195,12 +218,17 @@ export default {
     }
     if (request.method === 'POST' && p === '/api/optional-lead') return saveOptionalLead(request, env);
 
+    if (request.method === 'GET' && p === '/mastery') {
+      return masteryPaymentsEnabled(env) ? html(masteryCheckoutPage()) : html(masteryLockedPage());
+    }
+    if (request.method === 'GET' && p === '/mastery/success') return html(masterySuccessPage());
+    if (request.method === 'GET' && p === '/mastery/cancel') return html(masteryCancelPage());
     if (request.method === 'GET' && p === '/challenges') return html(challengeHubPage());
     if (request.method === 'GET' && (p === '/challenge' || p === '/challenges/7-day')) return sevenDayResponse(request, env, ctx);
     if (request.method === 'GET' && (p === '/momentum' || p === '/challenges/14-day' || p === '/challenges/14-day-get-active')) return html(challenge14Page());
     if (request.method === 'GET' && (p === '/challenges/21-day' || p === '/challenges/21-day-consistency')) return html(challenge21Page());
     if (request.method === 'GET' && (p === '/challenges/28-day' || p === '/challenges/28-day-mastery')) {
-      return masteryIsOpen(env) ? html(challenge28Page()) : html(masteryLockedPage());
+      return masteryPaymentsEnabled(env) ? html(masteryGatePage()) : html(masteryLockedPage());
     }
 
     return app.fetch(request, env, ctx);
