@@ -226,10 +226,18 @@ export async function getMasteryDashboard(db, userId) {
 
   const day = validateMasteryDay(profile.current_day || 1);
   const progress = await syncMasteryAchievements(db, user, day);
-  const [actionsResult, xpResult, achievementsResult] = await Promise.all([
+  const [actionsResult, xpResult, achievementsResult, proofResult] = await Promise.all([
     db.prepare('SELECT action_key, action_type, completed_at FROM mastery_daily_actions WHERE user_id = ? AND mastery_day = ? ORDER BY completed_at ASC').bind(user, day).all(),
     db.prepare('SELECT COALESCE(SUM(xp), 0) AS total_xp FROM mastery_xp_ledger WHERE user_id = ?').bind(user).first(),
     db.prepare('SELECT achievement_key, unlocked_at, metadata_json FROM mastery_achievements WHERE user_id = ? ORDER BY unlocked_at ASC').bind(user).all(),
+    db.prepare(`
+      SELECT id, mastery_day, caption, proof_xp_awarded, spotlight_opt_in,
+             moderation_status, public_use_consent_at, submitted_at
+      FROM mastery_proof_submissions
+      WHERE user_id = ? AND mastery_day = ?
+      ORDER BY submitted_at DESC
+      LIMIT 1
+    `).bind(user, day).first(),
   ]);
 
   const completedTypes = Object.fromEntries(
@@ -252,6 +260,7 @@ export async function getMasteryDashboard(db, userId) {
     today: {
       ...daily,
       completedActions: actionsResult?.results ?? [],
+      flexProof: proofResult || null,
     },
     achievements: achievementsResult?.results ?? [],
   };
