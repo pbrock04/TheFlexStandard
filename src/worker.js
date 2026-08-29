@@ -8,9 +8,25 @@ import { submitFlexProof, updateFlexProofSpotlightConsent } from './masteryProof
 import { participantRoute } from './participantRoutes.js';
 import { enhanceFoundationParticipantFlow, enhanceMomentumParticipantFlow, enhanceHabitLockParticipantFlow } from './participantClientEnhancer.js';
 import { healthDisclaimerPage, privacyPage, termsPage, fitnessNotice, legalFooter } from './legalPages.js';
+import { FOUNDATION_WORKBOOK_BASE64 } from './assets/foundationWorkbook.js';
 
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
+
+function workbookResponse() {
+  const binaryString = atob(FOUNDATION_WORKBOOK_BASE64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return new Response(bytes, {
+    status: 200,
+    headers: {
+      'content-type': 'application/pdf',
+      'content-disposition': 'inline; filename="The_Flex_Standard_7Day_Foundation_Workbook.pdf"',
+      'cache-control': 'public, max-age=86400',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+}
 
 function masteryIsOpen(env) { return String(env?.MASTERY_LAUNCH_MODE || '').toLowerCase() === 'open'; }
 function masteryLockedPage() { return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><title>28-Day Mastery — Locked</title><style>body{margin:0;background:#070707;color:#fff;font-family:system-ui,sans-serif;min-height:100vh;display:grid;place-items:center}.card{width:min(620px,calc(100% - 32px));background:#141414;border:1px solid #2a2a2a;border-radius:22px;padding:30px;text-align:center}.gold{color:#d4af37;font-weight:900;letter-spacing:.08em}h1{font-size:clamp(2rem,8vw,3.5rem);margin:.5rem 0}.muted{color:#999}.btn{display:inline-block;margin-top:14px;background:#d4af37;color:#080808;text-decoration:none;font-weight:900;border-radius:999px;padding:12px 18px}</style></head><body><main class="card"><div class="gold">THE FLEX STANDARD · MASTERY</div><h1>28-Day Mastery is locked.</h1><p class="muted">Mastery is being prepared as the next step after the free challenge path. Your current challenges remain available while we finish the secure access layer.</p><a class="btn" href="/challenges">BACK TO CHALLENGES</a></main></body></html>`; }
@@ -85,6 +101,7 @@ async function sevenDayResponse(request, env, ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url), p = url.pathname.replace(/\/$/, '') || '/';
+    if (request.method === 'GET' && p === '/downloads/flex-7day-foundation-workbook.pdf') return workbookResponse();
     if (p.startsWith('/api/participants/')) { const response = await participantRoute(request, env, p); if (response) return response; }
     if (p.startsWith('/api/mastery/') && !masteryIsOpen(env)) return json({ ok: false, error: '28-Day Mastery is not open for participant access yet.' }, 403);
     if (p === '/api/mastery/proof' || p === '/api/mastery/proof/spotlight') { const response = await masteryProofRoute(request, env, p); if (response) return response; }
