@@ -1,16 +1,6 @@
-name: Feature Validation CI
+name: Advertising Readiness CI
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'test/**'
-      - 'migrations/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/mastery-ci.yml'
   push:
     branches:
       - feature/advertising-readiness-v1
@@ -20,14 +10,22 @@ on:
       - 'migrations/**'
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/mastery-ci.yml'
-  workflow_dispatch:
+      - '.github/workflows/ci-advertising-readiness.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - 'migrations/**'
+      - 'package.json'
+      - 'package-lock.json'
 
 permissions:
   contents: read
 
 jobs:
-  validate-feature:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -48,10 +46,6 @@ jobs:
           node --check src/eventTaxonomy.js
           node --check src/participantLifecycle.js
           node --check src/participantRoutes.js
-          node --check src/participantClientEnhancer.js
-          node --check src/challenge14.js
-          node --check src/challenge21.js
-          node --check src/masteryLogic.js
           node --check src/masteryApi.js
           node --check src/masteryProof.js
           node --check src/masteryProofApi.js
@@ -60,5 +54,5 @@ jobs:
       - name: Run Test Suite
         run: npm test
 
-      - name: Safety Check
-        run: echo "Validation only — no remote migrations and no Cloudflare deployment."
+      - name: Confirm No Deployment Step
+        run: echo "Validation only. No D1 migration or Cloudflare deployment runs in this workflow."
