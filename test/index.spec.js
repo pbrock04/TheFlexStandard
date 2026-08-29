@@ -2,13 +2,15 @@ import { describe, it, expect } from 'vitest';
 import worker from '../src/worker.js';
 
 describe('The Flex Standard worker', () => {
-  it('returns 200 OK for home with a visible health disclaimer link', async () => {
+  it('returns 200 OK for home with visible health disclaimer access', async () => {
     const response = await worker.fetch(new Request('https://theflexstandard.com/'), {});
     const html = await response.text();
     expect(response.status).toBe(200);
     expect(html).toContain('Health &amp; Fitness Disclaimer');
     expect(html).toContain('/health-disclaimer');
     expect(html).toContain('not a substitute for individualized medical advice');
+    expect(html).toContain('data-flex-health-menu');
+    expect(html).toContain('HEALTH &amp; FITNESS DISCLAIMER');
   });
 
   it('serves the full health and fitness disclaimer page', async () => {
