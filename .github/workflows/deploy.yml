@@ -7,6 +7,7 @@ on:
     paths:
       - 'src/**'
       - 'test/**'
+      - 'migrations/**'
       - 'wrangler.toml'
       - 'package.json'
       - '.github/workflows/**'
@@ -28,10 +29,27 @@ jobs:
         run: npm ci
 
       - name: Validate Syntax
-        run: node --check src/index.js && node --check src/worker.js
+        run: node --check src/index.js && node --check src/worker.js && node --check src/masteryApi.js && node --check src/masteryProof.js && node --check src/masteryProofApi.js && node --check src/masteryDashboard.js
 
       - name: Run Test Suite
         run: npm test
+
+      - name: Ensure private Mastery Proof R2 bucket exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if npx --yes wrangler@latest r2 bucket list | grep -q '^the-flex-standard-mastery-proof$'; then
+            echo 'Mastery Proof bucket already exists.'
+          else
+            npx --yes wrangler@latest r2 bucket create the-flex-standard-mastery-proof
+          fi
+
+      - name: Apply D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@latest d1 migrations apply flex-standard-db --remote
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
