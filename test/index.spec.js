@@ -29,10 +29,23 @@ describe('The Flex Standard worker', () => {
       expect(html).toContain('progress_snapshot');
       expect(html).toContain('/api/participants/start');
       expect(html).toContain('/api/participants/progress');
+      expect(html).toContain('/downloads/flex-7day-foundation-workbook.pdf');
+      expect(html).toContain('DOWNLOAD 7-DAY COMPANION WORKBOOK');
       expect(html).toContain('7_day_foundation');
       expect(html).not.toContain('participant-gate');
       expect(html).not.toContain('CONTINUE WITHOUT SIGNING UP');
     }
+  });
+
+  it('serves the embedded Foundation workbook as a valid PDF response', async () => {
+    const response = await worker.fetch(new Request('https://theflexstandard.com/downloads/flex-7day-foundation-workbook.pdf'), {});
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/pdf');
+    expect(response.headers.get('content-disposition')).toContain('The_Flex_Standard_7Day_Foundation_Workbook.pdf');
+    expect(response.headers.get('cache-control')).toBe('public, max-age=86400');
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    expect(bytes.length).toBeGreaterThan(1000);
+    expect(String.fromCharCode(...bytes.slice(0, 5))).toBe('%PDF-');
   });
 
   it('serves legal and safety pages', async () => {
