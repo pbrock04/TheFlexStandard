@@ -3,10 +3,12 @@ import { challengeHubPage } from './challengeHub.js';
 import { challenge14Page } from './challenge14.js';
 import { challenge21Page } from './challenge21.js';
 import { challenge28Page } from './challenge28.js';
+import { healthDisclaimerPage, addGlobalLegal, addChallengeSafety } from './legal.js';
 import { ensureMasteryProfile, completeMasteryAction, getMasteryDashboard } from './masteryApi.js';
 import { submitFlexProof, updateFlexProofSpotlightConsent } from './masteryProofApi.js';
 
-const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
+const html = body => new Response(addGlobalLegal(body), { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
+const challengeHtml = body => html(addChallengeSafety(body));
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
 function masteryIsOpen(env) {
@@ -172,7 +174,16 @@ async function sevenDayResponse(request, env, ctx) {
   const response = await app.fetch(new Request(url.toString(), request), env, ctx);
   const type = response.headers.get('content-type') || '';
   if (!type.includes('text/html')) return response;
-  const source = enhanceChallenge(await response.text());
+  const source = addGlobalLegal(addChallengeSafety(enhanceChallenge(await response.text())));
+  const headers = new Headers(response.headers); headers.set('content-type', 'text/html; charset=utf-8');
+  return new Response(source, { status: response.status, headers });
+}
+
+async function appResponseWithLegal(request, env, ctx) {
+  const response = await app.fetch(request, env, ctx);
+  const type = response.headers.get('content-type') || '';
+  if (!type.includes('text/html')) return response;
+  const source = addGlobalLegal(await response.text());
   const headers = new Headers(response.headers); headers.set('content-type', 'text/html; charset=utf-8');
   return new Response(source, { status: response.status, headers });
 }
@@ -195,14 +206,15 @@ export default {
     }
     if (request.method === 'POST' && p === '/api/optional-lead') return saveOptionalLead(request, env);
 
+    if (request.method === 'GET' && (p === '/health-disclaimer' || p === '/health-and-fitness-disclaimer')) return html(healthDisclaimerPage());
     if (request.method === 'GET' && p === '/challenges') return html(challengeHubPage());
     if (request.method === 'GET' && (p === '/challenge' || p === '/challenges/7-day')) return sevenDayResponse(request, env, ctx);
-    if (request.method === 'GET' && (p === '/momentum' || p === '/challenges/14-day' || p === '/challenges/14-day-get-active')) return html(challenge14Page());
-    if (request.method === 'GET' && (p === '/challenges/21-day' || p === '/challenges/21-day-consistency')) return html(challenge21Page());
+    if (request.method === 'GET' && (p === '/momentum' || p === '/challenges/14-day' || p === '/challenges/14-day-get-active')) return challengeHtml(challenge14Page());
+    if (request.method === 'GET' && (p === '/challenges/21-day' || p === '/challenges/21-day-consistency')) return challengeHtml(challenge21Page());
     if (request.method === 'GET' && (p === '/challenges/28-day' || p === '/challenges/28-day-mastery')) {
       return masteryIsOpen(env) ? html(challenge28Page()) : html(masteryLockedPage());
     }
 
-    return app.fetch(request, env, ctx);
+    return appResponseWithLegal(request, env, ctx);
   }
 };
