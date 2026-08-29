@@ -94,6 +94,16 @@ async function getCompletedStandardDays(db, userId) {
   return (result?.results ?? []).map((row) => Number(row.mastery_day));
 }
 
+async function isStandardMetForDay(db, userId, masteryDay) {
+  const row = await db.prepare(`
+    SELECT COUNT(DISTINCT action_type) AS core_count
+    FROM mastery_daily_actions
+    WHERE user_id = ? AND mastery_day = ?
+      AND action_type IN ('focus','learn','execute','excel')
+  `).bind(userId, masteryDay).first();
+  return Number(row?.core_count ?? 0) === 4;
+}
+
 async function getComebackCount(db, userId) {
   const row = await db.prepare(`
     SELECT COUNT(*) AS count
@@ -171,19 +181,38 @@ export async function completeMasteryAction(db, {
     `).bind(user, sourceKey, award, masteryDay, asJson(metadata), timestamp).run();
   }
 
-  await db.prepare(`
-    UPDATE mastery_profiles
-    SET current_day = CASE WHEN current_day < ? THEN ? ELSE current_day END,
-        updated_at = ?
-    WHERE user_id = ?
-  `).bind(Math.min(28, masteryDay + 1), Math.min(28, masteryDay + 1), timestamp, user).run();
+  const standardMet = await isStandardMetForDay(db, user, masteryDay);
+  const nextDay = standardMet ? Math.min(28, masteryDay + 1) : masteryDay;
+  const dayAdvanced = standardMet && masteryDay < 28;
 
-  await syncMasteryAchievements(db, user, Math.min(28, masteryDay + 1), timestamp);
+  if (standardMet && masteryDay === 28) {
+    await db.prepare(`
+      UPDATE mastery_profiles
+      SET current_day = 28,
+          completed_at = COALESCE(completed_at, ?),
+          updated_at = ?
+      WHERE user_id = ?
+    `).bind(timestamp, timestamp, user).run();
+  } else if (dayAdvanced) {
+    await db.prepare(`
+      UPDATE mastery_profiles
+      SET current_day = CASE WHEN current_day < ? THEN ? ELSE current_day END,
+          updated_at = ?
+      WHERE user_id = ?
+    `).bind(nextDay, nextDay, timestamp, user).run();
+  } else {
+    await db.prepare('UPDATE mastery_profiles SET updated_at = ? WHERE user_id = ?').bind(timestamp, user).run();
+  }
+
+  const profile = await getMasteryProfile(db, user);
+  await syncMasteryAchievements(db, user, Number(profile?.current_day || nextDay), timestamp);
 
   return {
     created: true,
     xpAwarded: award,
     sourceKey,
+    standardMet,
+    dayAdvanced,
     idempotencyKey: createXpKey({ userId: user, sourceType: 'daily_action', sourceId: sourceKey }),
   };
 }
@@ -219,6 +248,7 @@ export async function getMasteryDashboard(db, userId) {
       completedCount: progress.completedStandardDays.length,
       streak: progress.streak,
     },
+    currentStreak: progress.streak,
     today: {
       ...daily,
       completedActions: actionsResult?.results ?? [],
