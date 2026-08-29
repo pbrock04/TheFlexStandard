@@ -18,7 +18,12 @@ export function addGlobalLegal(source) {
     source = source.includes('</style>') ? source.replace('</style>', GLOBAL_LEGAL_CSS + '</style>') : source;
   }
   if (source.includes('id="mobileMenu"') && !source.includes('data-flex-health-menu href=')) {
-    source = source.replace('</nav></header>', '<a data-flex-health-menu href="/health-disclaimer">HEALTH &amp; FITNESS DISCLAIMER</a></nav></header>');
+    const menuLink = '<a data-flex-health-menu href="/health-disclaimer">HEALTH &amp; FITNESS DISCLAIMER</a>';
+    if (source.includes('</nav><main>')) {
+      source = source.replace('</nav><main>', menuLink + '</nav><main>');
+    } else if (source.includes('</nav></header>')) {
+      source = source.replace('</nav></header>', menuLink + '</nav></header>');
+    }
   }
   if (source.includes('<div class="flex-legal-links">')) return source;
   const legal = `<div class="flex-legal-links"><a href="/health-disclaimer">Health &amp; Fitness Disclaimer</a><span>•</span><a href="/privacy">Privacy</a><span>•</span><a href="/terms">Terms</a></div><p class="flex-footer-disclaimer">Fitness information on this site is educational and is not a substitute for individualized medical advice.</p>`;
