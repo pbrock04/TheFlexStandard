@@ -20,7 +20,7 @@ export function addGlobalLegal(source) {
   if (source.includes('id="mobileMenu"') && !source.includes('data-flex-health-menu href=')) {
     source = source.replace('</nav></header>', '<a data-flex-health-menu href="/health-disclaimer">HEALTH &amp; FITNESS DISCLAIMER</a></nav></header>');
   }
-  if (source.includes('href="/health-disclaimer"') && source.includes('flex-legal-links')) return source;
+  if (source.includes('<div class="flex-legal-links">')) return source;
   const legal = `<div class="flex-legal-links"><a href="/health-disclaimer">Health &amp; Fitness Disclaimer</a><span>•</span><a href="/privacy">Privacy</a><span>•</span><a href="/terms">Terms</a></div><p class="flex-footer-disclaimer">Fitness information on this site is educational and is not a substitute for individualized medical advice.</p>`;
   if (source.includes('</footer>')) return source.replace('</footer>', legal + '</footer>');
   return source.replace('</body>', `<footer>${legal}</footer></body>`);
