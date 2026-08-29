@@ -18,6 +18,17 @@ export const BASE_ACTION_XP = Object.freeze({
   mastery_complete: 100,
 });
 
+export const CORE_ACHIEVEMENTS = Object.freeze([
+  { key: 'FIRST_STEP', title: 'FIRST STEP', description: 'Meet the Standard for the first time.' },
+  { key: 'FIRST_WEEK', title: 'FIRST WEEK', description: 'Complete seven Standard days.' },
+  { key: 'ON_FIRE', title: 'ON FIRE', description: 'Build a truthful 7-day streak.' },
+  { key: 'DECISION_MAKER', title: 'DECISION MAKER', description: 'Reach the Day 14 halfway checkpoint.' },
+  { key: 'COMEBACK', title: 'COMEBACK', description: 'Return and complete a Comeback action.' },
+  { key: 'OWN_IT', title: 'OWN IT', description: 'Reach Day 21 of Mastery.' },
+  { key: 'SELF_STARTER', title: 'SELF STARTER', description: 'Reach Day 25 and set your own plan.' },
+  { key: 'MASTERY', title: 'MASTERY', description: 'Complete the 28-Day Mastery program.' },
+]);
+
 export function normalizeXp(value) {
   const xp = Number(value);
   if (!Number.isFinite(xp) || xp < 0) return 0;
@@ -127,4 +138,31 @@ export function buildDailyXpSummary(actions = {}) {
 
   const requiredComplete = ['focus', 'learn', 'execute', 'excel'].every((key) => normalized[key]);
   return { actions: normalized, earnedXp: earned, standardMet: requiredComplete };
+}
+
+export function evaluateMasteryAchievements({
+  completedStandardDays = [],
+  currentDay = 1,
+  comebackCount = 0,
+} = {}) {
+  const days = [...new Set(
+    (Array.isArray(completedStandardDays) ? completedStandardDays : [])
+      .map(Number)
+      .filter((day) => Number.isInteger(day) && day >= 1 && day <= 28),
+  )].sort((a, b) => a - b);
+
+  const day = Math.min(28, Math.max(1, Math.floor(Number(currentDay) || 1)));
+  const streak = calculateConsecutiveStreak(days);
+  const unlocked = new Set();
+
+  if (days.length >= 1) unlocked.add('FIRST_STEP');
+  if (days.length >= 7) unlocked.add('FIRST_WEEK');
+  if (streak >= 7) unlocked.add('ON_FIRE');
+  if (day >= 14 || days.includes(14)) unlocked.add('DECISION_MAKER');
+  if (Number(comebackCount) > 0) unlocked.add('COMEBACK');
+  if (day >= 21 || days.includes(21)) unlocked.add('OWN_IT');
+  if (day >= 25 || days.includes(25)) unlocked.add('SELF_STARTER');
+  if (days.includes(28)) unlocked.add('MASTERY');
+
+  return CORE_ACHIEVEMENTS.filter((achievement) => unlocked.has(achievement.key));
 }
