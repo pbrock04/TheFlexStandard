@@ -38,15 +38,23 @@ describe('The Flex Standard worker', () => {
     }
   });
 
-  it('keeps 21-Day and 28-Day compatibility routes active', async () => {
-    const r21 = await worker.fetch(new Request('https://theflexstandard.com/challenges/21-day'), {});
-    const h21 = await r21.text();
-    expect(r21.status).toBe(200);
-    expect(h21).toContain('21-Day Consistency Challenge');
+  it('serves Habit Lock on current and compatibility routes', async () => {
+    for (const path of ['/challenges/21-day', '/challenges/21-day-consistency']) {
+      const response = await worker.fetch(new Request('https://theflexstandard.com' + path), {});
+      const html = await response.text();
+      expect(response.status).toBe(200);
+      expect(html).toContain('21-DAY HABIT LOCK');
+      expect(html).toContain('flexStandard.challenge14.v3');
+      expect(html).toContain('WELCOME BACK.');
+      expect(html).toContain('You Completed the Free FLEX Path.');
+      expect(html).not.toContain('VIEW 28-DAY MASTERY');
+    }
+  });
 
-    const r28 = await worker.fetch(new Request('https://theflexstandard.com/challenges/28-day'), {});
-    const h28 = await r28.text();
-    expect(r28.status).toBe(200);
-    expect(h28).toContain('28-Day Mastery');
+  it('keeps 28-Day Mastery locked while launch mode is closed', async () => {
+    const response = await worker.fetch(new Request('https://theflexstandard.com/challenges/28-day'), {});
+    const html = await response.text();
+    expect(response.status).toBe(200);
+    expect(html).toContain('28-Day Mastery is locked.');
   });
 });
