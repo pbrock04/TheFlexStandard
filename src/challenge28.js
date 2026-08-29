@@ -1,1 +1,1 @@
-export { masteryDashboardPage as challenge28Page } from './masteryDashboard.js';
+export { masteryDashboardV2Page as challenge28Page } from './masteryDashboardV2.js';
