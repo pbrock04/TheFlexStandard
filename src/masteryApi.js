@@ -1,7 +1,9 @@
 import {
   BASE_ACTION_XP,
   buildDailyXpSummary,
+  calculateConsecutiveStreak,
   createXpKey,
+  evaluateMasteryAchievements,
   getMasteryLevel,
   getMasteryWeek,
 } from './masteryLogic.js';
@@ -79,6 +81,56 @@ export async function getMasteryProfile(db, userId) {
   return db.prepare('SELECT * FROM mastery_profiles WHERE user_id = ?').bind(user).first();
 }
 
+async function getCompletedStandardDays(db, userId) {
+  const result = await db.prepare(`
+    SELECT mastery_day
+    FROM mastery_daily_actions
+    WHERE user_id = ?
+      AND action_type IN ('focus','learn','execute','excel')
+    GROUP BY mastery_day
+    HAVING COUNT(DISTINCT action_type) = 4
+    ORDER BY mastery_day ASC
+  `).bind(userId).all();
+  return (result?.results ?? []).map((row) => Number(row.mastery_day));
+}
+
+async function getComebackCount(db, userId) {
+  const row = await db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM mastery_daily_actions
+    WHERE user_id = ? AND action_type = 'comeback'
+  `).bind(userId).first();
+  return Number(row?.count ?? 0);
+}
+
+export async function syncMasteryAchievements(db, userId, currentDay, now = Date.now()) {
+  const user = String(userId ?? '').trim();
+  if (!user) throw new Error('user_id is required');
+  const timestamp = nowMs(now);
+  const [completedStandardDays, comebackCount] = await Promise.all([
+    getCompletedStandardDays(db, user),
+    getComebackCount(db, user),
+  ]);
+
+  const eligible = evaluateMasteryAchievements({ completedStandardDays, currentDay, comebackCount });
+  for (const achievement of eligible) {
+    await db.prepare(`
+      INSERT OR IGNORE INTO mastery_achievements
+        (user_id, achievement_key, unlocked_at, metadata_json)
+      VALUES (?, ?, ?, ?)
+    `).bind(user, achievement.key, timestamp, asJson({
+      title: achievement.title,
+      description: achievement.description,
+    })).run();
+  }
+
+  return {
+    completedStandardDays,
+    streak: calculateConsecutiveStreak(completedStandardDays),
+    eligible,
+  };
+}
+
 export async function completeMasteryAction(db, {
   userId,
   day,
@@ -126,6 +178,8 @@ export async function completeMasteryAction(db, {
     WHERE user_id = ?
   `).bind(Math.min(28, masteryDay + 1), Math.min(28, masteryDay + 1), timestamp, user).run();
 
+  await syncMasteryAchievements(db, user, Math.min(28, masteryDay + 1), timestamp);
+
   return {
     created: true,
     xpAwarded: award,
@@ -142,10 +196,11 @@ export async function getMasteryDashboard(db, userId) {
   if (!profile) return null;
 
   const day = validateMasteryDay(profile.current_day || 1);
+  const progress = await syncMasteryAchievements(db, user, day);
   const [actionsResult, xpResult, achievementsResult] = await Promise.all([
     db.prepare('SELECT action_key, action_type, completed_at FROM mastery_daily_actions WHERE user_id = ? AND mastery_day = ? ORDER BY completed_at ASC').bind(user, day).all(),
     db.prepare('SELECT COALESCE(SUM(xp), 0) AS total_xp FROM mastery_xp_ledger WHERE user_id = ?').bind(user).first(),
-    db.prepare('SELECT achievement_key, unlocked_at FROM mastery_achievements WHERE user_id = ? ORDER BY unlocked_at ASC').bind(user).all(),
+    db.prepare('SELECT achievement_key, unlocked_at, metadata_json FROM mastery_achievements WHERE user_id = ? ORDER BY unlocked_at ASC').bind(user).all(),
   ]);
 
   const completedTypes = Object.fromEntries(
@@ -159,6 +214,11 @@ export async function getMasteryDashboard(db, userId) {
     day,
     week: getMasteryWeek(day),
     level: getMasteryLevel(totalXp),
+    progress: {
+      completedStandardDays: progress.completedStandardDays,
+      completedCount: progress.completedStandardDays.length,
+      streak: progress.streak,
+    },
     today: {
       ...daily,
       completedActions: actionsResult?.results ?? [],
