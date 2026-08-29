@@ -9,6 +9,14 @@ import { submitFlexProof, updateFlexProofSpotlightConsent } from './masteryProof
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
+function masteryIsOpen(env) {
+  return String(env?.MASTERY_LAUNCH_MODE || '').toLowerCase() === 'open';
+}
+
+function masteryLockedPage() {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><title>28-Day Mastery — Locked</title><style>body{margin:0;background:#070707;color:#fff;font-family:system-ui,sans-serif;min-height:100vh;display:grid;place-items:center}.card{width:min(620px,calc(100% - 32px));background:#141414;border:1px solid #2a2a2a;border-radius:22px;padding:30px;text-align:center}.gold{color:#d4af37;font-weight:900;letter-spacing:.08em}h1{font-size:clamp(2rem,8vw,3.5rem);margin:.5rem 0}.muted{color:#999}.btn{display:inline-block;margin-top:14px;background:#d4af37;color:#080808;text-decoration:none;font-weight:900;border-radius:999px;padding:12px 18px}</style></head><body><main class="card"><div class="gold">THE FLEX STANDARD · MASTERY</div><h1>28-Day Mastery is locked.</h1><p class="muted">Mastery is being prepared as the next step after the free challenge path. Your current challenges remain available while we finish the secure access layer.</p><a class="btn" href="/challenges">BACK TO CHALLENGES</a></main></body></html>`;
+}
+
 function cleanHeader(value) {
   return String(value || '').replace(/[\r\n]+/g, ' ').trim();
 }
@@ -174,6 +182,9 @@ export default {
     const url = new URL(request.url);
     const p = url.pathname.replace(/\/$/, '') || '/';
 
+    if (p.startsWith('/api/mastery/') && !masteryIsOpen(env)) {
+      return json({ ok: false, error: '28-Day Mastery is not open for participant access yet.' }, 403);
+    }
     if (p === '/api/mastery/proof' || p === '/api/mastery/proof/spotlight') {
       const response = await masteryProofRoute(request, env, p);
       if (response) return response;
@@ -188,7 +199,9 @@ export default {
     if (request.method === 'GET' && (p === '/challenge' || p === '/challenges/7-day')) return sevenDayResponse(request, env, ctx);
     if (request.method === 'GET' && (p === '/momentum' || p === '/challenges/14-day' || p === '/challenges/14-day-get-active')) return html(challenge14Page());
     if (request.method === 'GET' && (p === '/challenges/21-day' || p === '/challenges/21-day-consistency')) return html(challenge21Page());
-    if (request.method === 'GET' && (p === '/challenges/28-day' || p === '/challenges/28-day-mastery')) return html(challenge28Page());
+    if (request.method === 'GET' && (p === '/challenges/28-day' || p === '/challenges/28-day-mastery')) {
+      return masteryIsOpen(env) ? html(challenge28Page()) : html(masteryLockedPage());
+    }
 
     return app.fetch(request, env, ctx);
   }
