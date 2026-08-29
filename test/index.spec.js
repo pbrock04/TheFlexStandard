@@ -7,12 +7,18 @@ describe('The Flex Standard worker', () => {
     expect(response.status).toBe(200);
   });
 
-  it('serves the challenge hub', async () => {
+  it('serves the active free challenge hub', async () => {
     const response = await worker.fetch(new Request('https://theflexstandard.com/challenges'), {});
     const html = await response.text();
     expect(response.status).toBe(200);
     expect(html).toContain('Your Challenges');
+    expect(html).toContain('7-Day Foundation');
     expect(html).toContain('14-Day Momentum');
+    expect(html).toContain('21-Day Habit Lock');
+    expect(html).toContain('ACTIVE V1 JOURNEY');
+    expect(html).toContain('No purchase is required.');
+    expect(html).toContain('More Is Coming');
+    expect(html).toContain('NOT PART OF V1');
   });
 
   it('serves the enhanced 7-Day Challenge on both routes', async () => {
@@ -46,7 +52,10 @@ describe('The Flex Standard worker', () => {
       expect(html).toContain('21-DAY HABIT LOCK');
       expect(html).toContain('flexStandard.challenge14.v3');
       expect(html).toContain('WELCOME BACK.');
+      expect(html).toContain('CONTINUE WHERE I LEFT OFF');
       expect(html).toContain('You Completed the Free FLEX Path.');
+      expect(html).toContain('Your FLEX Maintenance Standard');
+      expect(html).toContain('COPY MY COMPLETION MESSAGE');
       expect(html).not.toContain('VIEW 28-DAY MASTERY');
     }
   });
