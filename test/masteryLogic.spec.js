@@ -5,6 +5,7 @@ import {
   calculateConsecutiveStreak,
   calculateConsistency,
   createXpKey,
+  evaluateMasteryAchievements,
   getMasteryLevel,
   getMasteryWeek,
   shouldOfferComeback,
@@ -59,5 +60,25 @@ describe('Mastery logic', () => {
 
     const incomplete = buildDailyXpSummary({ focus: true, learn: true, execute: false, excel: true });
     expect(incomplete.standardMet).toBe(false);
+  });
+
+  it('unlocks achievements from real Mastery milestones', () => {
+    const firstWeek = evaluateMasteryAchievements({
+      completedStandardDays: [1, 2, 3, 4, 5, 6, 7],
+      currentDay: 8,
+    }).map((item) => item.key);
+    expect(firstWeek).toContain('FIRST_STEP');
+    expect(firstWeek).toContain('FIRST_WEEK');
+    expect(firstWeek).toContain('ON_FIRE');
+    expect(firstWeek).not.toContain('DECISION_MAKER');
+
+    const later = evaluateMasteryAchievements({
+      completedStandardDays: [1, 2, 3, 4, 5, 6, 7, 14, 21, 25, 28],
+      currentDay: 28,
+      comebackCount: 1,
+    }).map((item) => item.key);
+    expect(later).toEqual(expect.arrayContaining([
+      'DECISION_MAKER', 'COMEBACK', 'OWN_IT', 'SELF_STARTER', 'MASTERY',
+    ]));
   });
 });
