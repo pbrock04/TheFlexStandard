@@ -5,6 +5,7 @@ import { challenge21Page } from './challenge21.js';
 import { challenge28Page } from './challenge28.js';
 import { ensureMasteryProfile, completeMasteryAction, getMasteryDashboard } from './masteryApi.js';
 import { submitFlexProof, updateFlexProofSpotlightConsent } from './masteryProofApi.js';
+import { participantRoute } from './participantRoutes.js';
 
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -181,6 +182,11 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const p = url.pathname.replace(/\/$/, '') || '/';
+
+    if (p.startsWith('/api/participants/')) {
+      const response = await participantRoute(request, env, p);
+      if (response) return response;
+    }
 
     if (p.startsWith('/api/mastery/') && !masteryIsOpen(env)) {
       return json({ ok: false, error: '28-Day Mastery is not open for participant access yet.' }, 403);
