@@ -3,12 +3,63 @@ import { challengeHubPage } from './challengeHub.js';
 import { challenge14Page } from './challenge14.js';
 import { challenge21Page } from './challenge21.js';
 import { challenge28Page } from './challenge28.js';
+import { ensureMasteryProfile, completeMasteryAction, getMasteryDashboard } from './masteryApi.js';
 
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 
 function cleanHeader(value) {
   return String(value || '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+async function readJson(request) {
+  try { return await request.json(); } catch { return null; }
+}
+
+function masteryUserId(request, body = null) {
+  const url = new URL(request.url);
+  return String(
+    request.headers.get('x-flex-user-id') ||
+    url.searchParams.get('user_id') ||
+    body?.user_id ||
+    ''
+  ).trim().slice(0, 128);
+}
+
+async function masteryRoute(request, env, path) {
+  if (!env.DB) return json({ ok: false, error: 'Mastery storage is unavailable.' }, 503);
+  const body = request.method === 'POST' ? await readJson(request) : null;
+  if (request.method === 'POST' && body == null) return json({ ok: false, error: 'Invalid JSON request.' }, 400);
+  const userId = masteryUserId(request, body);
+  if (!userId) return json({ ok: false, error: 'A Mastery participant ID is required.' }, 400);
+
+  try {
+    if (request.method === 'POST' && path === '/api/mastery/setup') {
+      const profile = await ensureMasteryProfile(env.DB, userId, body?.setup || body || {});
+      return json({ ok: true, profile });
+    }
+    if (request.method === 'POST' && path === '/api/mastery/action') {
+      await ensureMasteryProfile(env.DB, userId, {});
+      const result = await completeMasteryAction(env.DB, {
+        userId,
+        day: body?.day,
+        actionKey: body?.action_key,
+        actionType: body?.action_type,
+        metadata: body?.metadata,
+      });
+      const dashboard = await getMasteryDashboard(env.DB, userId);
+      return json({ ok: true, result, dashboard });
+    }
+    if (request.method === 'GET' && path === '/api/mastery/dashboard') {
+      const dashboard = await getMasteryDashboard(env.DB, userId);
+      if (!dashboard) return json({ ok: false, error: 'Mastery profile not found.' }, 404);
+      return json({ ok: true, dashboard });
+    }
+  } catch (e) {
+    console.error('mastery_api_failed', e);
+    return json({ ok: false, error: e?.message || 'Mastery request failed.' }, 400);
+  }
+  return null;
 }
 
 async function notifyOptionalLead(env, { name, email, now }) {
@@ -18,24 +69,15 @@ async function notifyOptionalLead(env, { name, email, now }) {
   const timestamp = new Date(now).toISOString();
   const subject = 'Flex Standard: 7-Day participant continued';
   const body = [
-    'A participant completed the 7-Day Foundation and chose Save & Continue.',
-    '',
-    `Name: ${safeName}`,
-    `Email: ${safeEmail}`,
-    'Next challenge: 14-Day Momentum',
-    `Time: ${timestamp}`,
-    '',
+    'A participant completed the 7-Day Foundation and chose Save & Continue.', '',
+    `Name: ${safeName}`, `Email: ${safeEmail}`, 'Next challenge: 14-Day Momentum',
+    `Time: ${timestamp}`, '',
     'This notification contains private participant information. Do not forward or share it unnecessarily.'
   ].join('\r\n');
   const raw = [
-    'From: The Flex Standard <flex@theflexstandard.com>',
-    'To: pbrock04@gmail.com',
-    `Subject: ${subject}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: 8bit',
-    '',
-    body
+    'From: The Flex Standard <flex@theflexstandard.com>', 'To: pbrock04@gmail.com',
+    `Subject: ${subject}`, 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit', '', body
   ].join('\r\n');
   const message = new EmailMessage('flex@theflexstandard.com', 'pbrock04@gmail.com', raw);
   await env.PARTICIPANT_NOTIFY.send(message);
@@ -52,11 +94,7 @@ async function saveOptionalLead(request, env) {
   try {
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS optional_leads (id TEXT PRIMARY KEY,name TEXT,email TEXT NOT NULL UNIQUE,source TEXT NOT NULL DEFAULT '7-day-completion',created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)`).run();
     await env.DB.prepare(`INSERT INTO optional_leads (id,name,email,source,created_at,updated_at) VALUES (?,?,?,'7-day-completion',?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name,updated_at=excluded.updated_at`).bind(crypto.randomUUID(), name || null, email, now, now).run();
-    try {
-      await notifyOptionalLead(env, { name, email, now });
-    } catch (e) {
-      console.error('optional_lead_notification_failed', e);
-    }
+    try { await notifyOptionalLead(env, { name, email, now }); } catch (e) { console.error('optional_lead_notification_failed', e); }
     return json({ ok: true });
   } catch (e) {
     console.error('optional_lead_save_failed', e);
@@ -75,14 +113,12 @@ function enhanceChallenge(source) {
 }
 
 async function sevenDayResponse(request, env, ctx) {
-  const url = new URL(request.url);
-  url.pathname = '/challenge';
+  const url = new URL(request.url); url.pathname = '/challenge';
   const response = await app.fetch(new Request(url.toString(), request), env, ctx);
   const type = response.headers.get('content-type') || '';
   if (!type.includes('text/html')) return response;
   const source = enhanceChallenge(await response.text());
-  const headers = new Headers(response.headers);
-  headers.set('content-type', 'text/html; charset=utf-8');
+  const headers = new Headers(response.headers); headers.set('content-type', 'text/html; charset=utf-8');
   return new Response(source, { status: response.status, headers });
 }
 
@@ -91,6 +127,10 @@ export default {
     const url = new URL(request.url);
     const p = url.pathname.replace(/\/$/, '') || '/';
 
+    if (p.startsWith('/api/mastery/')) {
+      const response = await masteryRoute(request, env, p);
+      if (response) return response;
+    }
     if (request.method === 'POST' && p === '/api/optional-lead') return saveOptionalLead(request, env);
 
     if (request.method === 'GET' && p === '/challenges') return html(challengeHubPage());
