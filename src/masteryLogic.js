@@ -99,7 +99,7 @@ export function calculateConsecutiveStreak(completedDayNumbers) {
 export function shouldOfferComeback(lastCompletedAt, now = Date.now()) {
   const last = Number(lastCompletedAt);
   const current = Number(now);
-  if (!Number.isFinite(last) || !Number.isFinite(current) || current <= last) return false;
+  if (!Number.isFinite(last) || last <= 0 || !Number.isFinite(current) || current <= last) return false;
   return current - last >= 48 * 60 * 60 * 1000;
 }
 
