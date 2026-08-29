@@ -20,7 +20,9 @@ describe('The Flex Standard worker', () => {
       const response = await worker.fetch(new Request('https://theflexstandard.com' + path), {});
       const html = await response.text();
       expect(response.status).toBe(200);
-      expect(html).toContain('START THE 7-DAY FOUNDATION');
+      expect(html).toContain('FREE 7-DAY FOUNDATION');
+      expect(html).toContain('COMPLETE DAY 1');
+      expect(html).toContain('No account. No pressure.');
       expect(html).toContain('OPTIONAL FREE EXTRA');
       expect(html).toContain('printable 7-Day Foundation Workbook');
       expect(html).toContain('You can keep doing the challenge without signing up.');
