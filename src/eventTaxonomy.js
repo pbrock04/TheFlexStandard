@@ -1,5 +1,6 @@
 export const FLEX_EVENTS = Object.freeze({
   LEAD_CAPTURED: 'lead_captured',
+  FOUNDATION_DAY_3_REACHED: 'foundation_day_3_reached',
   FOUNDATION_COMPLETED: '7_day_foundation_completed',
   MOMENTUM_COMPLETED: '14_day_momentum_completed',
   HABIT_LOCK_COMPLETED: '21_day_habit_lock_completed',
