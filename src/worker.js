@@ -4,6 +4,7 @@ import { challenge14Page } from './challenge14.js';
 import { challenge21Page } from './challenge21.js';
 import { challenge28Page } from './challenge28.js';
 import { ensureMasteryProfile, completeMasteryAction, getMasteryDashboard } from './masteryApi.js';
+import { submitFlexProof, updateFlexProofSpotlightConsent } from './masteryProofApi.js';
 
 const html = body => new Response(body, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
@@ -24,6 +25,52 @@ function masteryUserId(request, body = null) {
     body?.user_id ||
     ''
   ).trim().slice(0, 128);
+}
+
+async function masteryProofRoute(request, env, path) {
+  if (!env.DB) return json({ ok: false, error: 'Mastery storage is unavailable.' }, 503);
+
+  try {
+    if (request.method === 'POST' && path === '/api/mastery/proof') {
+      if (!env.MASTERY_PROOF) return json({ ok: false, error: 'FLEX Proof private storage is not configured yet.' }, 503);
+      const form = await request.formData();
+      const userId = masteryUserId(request, { user_id: form.get('user_id') });
+      if (!userId) return json({ ok: false, error: 'A Mastery participant ID is required.' }, 400);
+      await ensureMasteryProfile(env.DB, userId, {});
+      const file = form.get('proof');
+      const result = await submitFlexProof({
+        db: env.DB,
+        bucket: env.MASTERY_PROOF,
+        userId,
+        day: form.get('day'),
+        file,
+        caption: form.get('caption') || '',
+        spotlightOptIn: String(form.get('spotlight_opt_in') || '').toLowerCase() === 'true',
+      });
+      const dashboard = await getMasteryDashboard(env.DB, userId);
+      return json({ ok: true, result, dashboard });
+    }
+
+    if (request.method === 'POST' && path === '/api/mastery/proof/spotlight') {
+      const body = await readJson(request);
+      if (body == null) return json({ ok: false, error: 'Invalid JSON request.' }, 400);
+      const userId = masteryUserId(request, body);
+      if (!userId) return json({ ok: false, error: 'A Mastery participant ID is required.' }, 400);
+      const result = await updateFlexProofSpotlightConsent({
+        db: env.DB,
+        userId,
+        submissionId: body.submission_id,
+        optedIn: Boolean(body.opted_in),
+      });
+      const dashboard = await getMasteryDashboard(env.DB, userId);
+      return json({ ok: true, result, dashboard });
+    }
+  } catch (e) {
+    console.error('mastery_proof_api_failed', e);
+    return json({ ok: false, error: e?.message || 'FLEX Proof request failed.' }, 400);
+  }
+
+  return null;
 }
 
 async function masteryRoute(request, env, path) {
@@ -127,6 +174,10 @@ export default {
     const url = new URL(request.url);
     const p = url.pathname.replace(/\/$/, '') || '/';
 
+    if (p === '/api/mastery/proof' || p === '/api/mastery/proof/spotlight') {
+      const response = await masteryProofRoute(request, env, p);
+      if (response) return response;
+    }
     if (p.startsWith('/api/mastery/')) {
       const response = await masteryRoute(request, env, p);
       if (response) return response;
