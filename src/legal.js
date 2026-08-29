@@ -17,7 +17,7 @@ export function addGlobalLegal(source) {
   if (!source.includes('flex-safety-notice{')) {
     source = source.includes('</style>') ? source.replace('</style>', GLOBAL_LEGAL_CSS + '</style>') : source;
   }
-  if (source.includes('id="mobileMenu"') && !source.includes('data-flex-health-menu')) {
+  if (source.includes('id="mobileMenu"') && !source.includes('data-flex-health-menu href=')) {
     source = source.replace('</nav></header>', '<a data-flex-health-menu href="/health-disclaimer">HEALTH &amp; FITNESS DISCLAIMER</a></nav></header>');
   }
   if (source.includes('href="/health-disclaimer"') && source.includes('flex-legal-links')) return source;
