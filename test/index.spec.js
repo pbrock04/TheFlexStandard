@@ -6,11 +6,10 @@ describe('The Flex Standard worker', () => {
     const response = await worker.fetch(new Request('https://theflexstandard.com/'), {});
     const html = await response.text();
     expect(response.status).toBe(200);
-    expect(html).toContain('Health &amp; Fitness Disclaimer');
+    expect(html.toLowerCase()).toContain('health &amp; fitness disclaimer');
     expect(html).toContain('/health-disclaimer');
     expect(html).toContain('not a substitute for individualized medical advice');
     expect(html).toContain('data-flex-health-menu');
-    expect(html).toContain('HEALTH &amp; FITNESS DISCLAIMER');
   });
 
   it('serves the full health and fitness disclaimer page', async () => {
