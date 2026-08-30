@@ -1,11 +1,12 @@
 name = "the-flex-standard"
-main = "src/worker.js"
+main = "src/subscribeWrapper.js"
 compatibility_date = "2026-08-18"
 account_id = "febd2c74daca8b517d14ab49d71873cf"
 
 [vars]
 ENVIRONMENT = "production"
 MASTERY_LAUNCH_MODE = "locked"
+BREVO_LIST_FOUNDATION = "2"
 
 [[d1_databases]]
 binding = "DB"
