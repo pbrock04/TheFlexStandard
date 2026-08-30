@@ -1,5 +1,6 @@
 import app from './subscribeWrapper.js';
 import { getMasteryCharter, signMasteryCharter } from './masteryCharterApi.js';
+import { enhanceMasteryExperience } from './masteryExperience.js';
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -96,6 +97,17 @@ async function augmentDashboardTier(response, env, request) {
   return new Response(JSON.stringify(data), { status: response.status, headers });
 }
 
+async function enhanceMasteryPage(response) {
+  if (!response.ok) return response;
+  const type = response.headers.get('content-type') || '';
+  if (!type.includes('text/html')) return response;
+  const source = await response.text();
+  const enhanced = enhanceMasteryExperience(source);
+  const headers = new Headers(response.headers);
+  headers.set('content-type', 'text/html; charset=utf-8');
+  return new Response(enhanced, { status: response.status, headers });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -122,6 +134,10 @@ export default {
       return augmentDashboardTier(response, env, request);
     }
 
-    return app.fetch(request, env, ctx);
+    const response = await app.fetch(request, env, ctx);
+    if (request.method === 'GET' && (path === '/challenges/28-day' || path === '/mastery')) {
+      return enhanceMasteryPage(response);
+    }
+    return response;
   },
 };
