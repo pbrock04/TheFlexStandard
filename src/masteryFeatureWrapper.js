@@ -11,6 +11,60 @@ function masteryIsOpen(env) {
   return String(env?.MASTERY_LAUNCH_MODE || '').toLowerCase() === 'open';
 }
 
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(String(value || ''));
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function cookieValue(request, name) {
+  const raw = request.headers.get('cookie') || '';
+  for (const part of raw.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return rest.join('=');
+  }
+  return '';
+}
+
+async function masteryTestAuthorized(request, env) {
+  const secret = String(env?.MASTERY_TEST_KEY || '');
+  if (!secret) return false;
+  const presented = cookieValue(request, 'flex_mastery_test');
+  if (!presented) return false;
+  return presented === await sha256Hex(secret);
+}
+
+function masteryTestPage(configured) {
+  const status = configured
+    ? '<p class="muted">Enter the private Mastery test key to open a one-hour test session on this device.</p>'
+    : '<p class="error">Private Mastery testing is not configured yet.</p>';
+  const form = configured
+    ? '<form method="post" action="/mastery-test/access"><input name="key" type="password" autocomplete="current-password" required placeholder="Private test key"><button type="submit">OPEN PRIVATE MASTERY TEST →</button></form>'
+    : '';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><title>Private Mastery Test — The Flex Standard</title><style>body{margin:0;background:#070707;color:#fff;font-family:system-ui,sans-serif;min-height:100vh;display:grid;place-items:center}.card{width:min(560px,calc(100% - 32px));background:#141414;border:1px solid #2a2a2a;border-radius:22px;padding:28px;text-align:center}.gold{color:#d4af37;font-weight:900;letter-spacing:.08em}h1{margin:.5rem 0}.muted{color:#aaa}.error{color:#ff9a9a}form{display:grid;gap:12px;margin-top:18px}input{width:100%;box-sizing:border-box;background:#0d0d0d;border:1px solid #333;border-radius:12px;color:#fff;padding:13px;font:inherit;text-align:center}button{border:0;border-radius:999px;padding:13px 16px;background:#d4af37;color:#080808;font:inherit;font-weight:900;cursor:pointer}</style></head><body><main class="card"><div class="gold">THE FLEX STANDARD · PRIVATE QA</div><h1>Mastery Test Access</h1>${status}${form}</main></body></html>`;
+}
+
+async function handleMasteryTestAccess(request, env) {
+  if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+  const secret = String(env?.MASTERY_TEST_KEY || '');
+  if (!secret) return new Response('Private Mastery testing is not configured.', { status: 503 });
+  let form;
+  try { form = await request.formData(); } catch { return new Response('Invalid request.', { status: 400 }); }
+  const key = String(form.get('key') || '');
+  if (!key || key !== secret) {
+    return new Response('Invalid private test key.', { status: 403, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  }
+  const token = await sha256Hex(secret);
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: '/challenges/28-day',
+      'set-cookie': `flex_mastery_test=${token}; Max-Age=3600; Path=/; HttpOnly; Secure; SameSite=Strict`,
+      'cache-control': 'no-store',
+    },
+  });
+}
+
 function masteryUserId(request, body = null) {
   const url = new URL(request.url);
   return String(
@@ -105,6 +159,7 @@ async function enhanceMasteryPage(response) {
   const enhanced = enhanceMasteryExperience(source);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
+  headers.set('cache-control', 'no-store');
   return new Response(enhanced, { status: response.status, headers });
 }
 
@@ -113,28 +168,41 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, '') || '/';
 
+    if (request.method === 'GET' && path === '/mastery-test') {
+      return new Response(masteryTestPage(Boolean(env?.MASTERY_TEST_KEY)), {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+      });
+    }
+    if (path === '/mastery-test/access') {
+      return handleMasteryTestAccess(request, env);
+    }
+
+    const testAuthorized = await masteryTestAuthorized(request, env);
+    const effectiveEnv = testAuthorized ? { ...env, MASTERY_LAUNCH_MODE: 'open' } : env;
+
     if (path === '/api/mastery/charter') {
-      return handleCharter(request, env);
+      return handleCharter(request, effectiveEnv);
     }
 
     if (request.method === 'POST' && path === '/api/mastery/action') {
       const cloned = request.clone();
       const body = await readJson(cloned);
-      const response = await app.fetch(request, env, ctx);
+      const response = await app.fetch(request, effectiveEnv, ctx);
       if (response.ok && body) {
         const userId = masteryUserId(cloned, body);
-        try { await persistExecuteTier(env, { ...body, user_id: userId }); }
+        try { await persistExecuteTier(effectiveEnv, { ...body, user_id: userId }); }
         catch (error) { console.error('mastery_tier_persist_failed', error); }
       }
       return response;
     }
 
     if (request.method === 'GET' && path === '/api/mastery/dashboard') {
-      const response = await app.fetch(request, env, ctx);
-      return augmentDashboardTier(response, env, request);
+      const response = await app.fetch(request, effectiveEnv, ctx);
+      return augmentDashboardTier(response, effectiveEnv, request);
     }
 
-    const response = await app.fetch(request, env, ctx);
+    const response = await app.fetch(request, effectiveEnv, ctx);
     if (request.method === 'GET' && (path === '/challenges/28-day' || path === '/mastery')) {
       return enhanceMasteryPage(response);
     }
