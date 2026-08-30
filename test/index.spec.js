@@ -42,14 +42,15 @@ describe('The Flex Standard worker', () => {
     expect(html).toContain('/health-disclaimer');
   });
 
-  it('serves the enhanced 7-Day Challenge with a safety notice on both routes', async () => {
+  it('serves the locked-in 7-Day Foundation with its next-step path and safety notice on both routes', async () => {
     for (const path of ['/challenge', '/challenges/7-day']) {
       const response = await worker.fetch(new Request('https://theflexstandard.com' + path), {});
       const html = await response.text();
       expect(response.status).toBe(200);
-      expect(html).toContain('SKIP FOR NOW — CONTINUE');
-      expect(html).toContain('SAVE & CONTINUE');
+      expect(html).toContain('7-DAY FOUNDATION');
+      expect(html).toContain('CHALLENGE COMPLETE');
       expect(html).toContain('/challenges/14-day');
+      expect(html).toContain('GO TO 14-DAY CHALLENGE');
       expect(html).toContain('BEFORE YOU START');
       expect(html).toContain('not medical advice');
       expect(html).toContain('READ THE FULL HEALTH &amp; FITNESS DISCLAIMER');
