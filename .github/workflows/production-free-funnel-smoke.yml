@@ -40,8 +40,8 @@ jobs:
           SMOKE_USER="release_smoke_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           echo "smoke_user=$SMOKE_USER" >> "$GITHUB_OUTPUT"
           export SMOKE_USER
-          node <<'NODE'
-          const { chromium } = require('playwright');
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
 
           const base = process.env.BASE_URL;
           const userId = process.env.SMOKE_USER;
@@ -109,12 +109,8 @@ jobs:
           npx --yes wrangler@latest d1 execute flex-standard-db --remote --command "$COUNT_SQL" > /tmp/counts.txt
           cat /tmp/counts.txt
 
-          node <<'NODE'
-          const fs = require('fs');
-          const text = fs.readFileSync('/tmp/counts.txt', 'utf8');
-          const nums = [...text.matchAll(/\b3\b/g)].length;
-          if (nums < 2) throw new Error('Expected row_count=3 and distinct_count=3 for smoke user');
-          NODE
+          grep -Eq 'row_count[^0-9]*3' /tmp/counts.txt
+          grep -Eq 'distinct_count[^0-9]*3' /tmp/counts.txt
 
       - name: Production release gate passed
         run: echo 'LAUNCH-READY — live 7→14→21 progression and exactly three D1 milestone events verified.'
