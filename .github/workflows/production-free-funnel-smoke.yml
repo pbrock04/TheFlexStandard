@@ -53,7 +53,7 @@ jobs:
           const page = await context.newPage();
 
           async function goto(path) {
-            const response = await page.goto(base + path, { waitUntil: 'networkidle', timeout: 60000 });
+            const response = await page.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 60000 });
             assert(response && response.ok(), `${path} returned ${response ? response.status() : 'no response'}`);
             const html = await page.content();
             assert(html.includes('data-flex-free-funnel-release-gate'), `${path} missing release-gate marker`);
@@ -65,8 +65,8 @@ jobs:
             localStorage.setItem('flexStandard.userId.v1', userId);
             localStorage.setItem('flexStandard.challenge7.v2', JSON.stringify({ completed }));
           }, { userId, completed: completed(7) });
-          await page.reload({ waitUntil: 'networkidle' });
-          await page.waitForTimeout(750);
+          await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
+          await page.waitForTimeout(1000);
           assert(await page.evaluate(() => localStorage.getItem('flexStandard.momentum14.unlocked') === 'true'), 'Foundation completion did not unlock Momentum');
 
           await goto('/challenges/14-day');
@@ -74,8 +74,8 @@ jobs:
           await page.evaluate(completed => {
             localStorage.setItem('flexStandard.challenge14.v3', JSON.stringify({ completed }));
           }, completed(14));
-          await page.reload({ waitUntil: 'networkidle' });
-          await page.waitForTimeout(750);
+          await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
+          await page.waitForTimeout(1000);
           assert(await page.locator('#challengeContent').isVisible(), 'Momentum challenge content not visible after completion state reload');
           assert(await page.evaluate(() => localStorage.getItem('flexStandard.habit21.unlocked') === 'true'), 'Momentum completion did not unlock Habit Lock');
 
@@ -84,8 +84,8 @@ jobs:
           await page.evaluate(completed => {
             localStorage.setItem('flexStandard.challenge21.v2', JSON.stringify({ completed }));
           }, completed(21));
-          await page.reload({ waitUntil: 'networkidle' });
-          await page.waitForTimeout(1000);
+          await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
+          await page.waitForTimeout(1250);
           assert(await page.locator('#challengeContent').isVisible(), 'Habit Lock content not visible after completion state reload');
           assert(await page.locator('#completion').isVisible(), 'Day 21 completion card is not visible');
 
