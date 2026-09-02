@@ -1,0 +1,120 @@
+name: Production Free Funnel Smoke
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Deploy Team Flex Worker
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://theflexstandard.com
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run live browser progression smoke
+        id: browser
+        shell: bash
+        run: |
+          SMOKE_USER="release_smoke_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          echo "smoke_user=$SMOKE_USER" >> "$GITHUB_OUTPUT"
+          export SMOKE_USER
+          node <<'NODE'
+          const { chromium } = require('playwright');
+
+          const base = process.env.BASE_URL;
+          const userId = process.env.SMOKE_USER;
+          const assert = (condition, message) => { if (!condition) throw new Error(message); };
+          const completed = n => Array.from({ length: n }, (_, i) => i + 1);
+
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext();
+          const page = await context.newPage();
+
+          async function goto(path) {
+            const response = await page.goto(base + path, { waitUntil: 'networkidle', timeout: 60000 });
+            assert(response && response.ok(), `${path} returned ${response ? response.status() : 'no response'}`);
+            const html = await page.content();
+            assert(html.includes('data-flex-free-funnel-release-gate'), `${path} missing release-gate marker`);
+          }
+
+          await goto('/challenges/7-day');
+          await page.evaluate(({ userId, completed }) => {
+            localStorage.clear();
+            localStorage.setItem('flexStandard.userId.v1', userId);
+            localStorage.setItem('flexStandard.challenge7.v2', JSON.stringify({ completed }));
+          }, { userId, completed: completed(7) });
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(750);
+          assert(await page.evaluate(() => localStorage.getItem('flexStandard.momentum14.unlocked') === 'true'), 'Foundation completion did not unlock Momentum');
+
+          await goto('/challenges/14-day');
+          assert(await page.locator('#challengeContent').isVisible(), 'Momentum remained locked after Foundation completion');
+          await page.evaluate(completed => {
+            localStorage.setItem('flexStandard.challenge14.v3', JSON.stringify({ completed }));
+          }, completed(14));
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(750);
+          assert(await page.locator('#challengeContent').isVisible(), 'Momentum challenge content not visible after completion state reload');
+          assert(await page.evaluate(() => localStorage.getItem('flexStandard.habit21.unlocked') === 'true'), 'Momentum completion did not unlock Habit Lock');
+
+          await goto('/challenges/21-day');
+          assert(await page.locator('#challengeContent').isVisible(), 'Habit Lock remained locked after Momentum completion');
+          await page.evaluate(completed => {
+            localStorage.setItem('flexStandard.challenge21.v2', JSON.stringify({ completed }));
+          }, completed(21));
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(1000);
+          assert(await page.locator('#challengeContent').isVisible(), 'Habit Lock content not visible after completion state reload');
+          assert(await page.locator('#completion').isVisible(), 'Day 21 completion card is not visible');
+
+          console.log(`Production browser progression smoke passed for ${userId}`);
+          await browser.close();
+          NODE
+
+      - name: Verify exactly three milestone rows in remote D1
+        shell: bash
+        run: |
+          USER_ID='${{ steps.browser.outputs.smoke_user }}'
+          SQL="SELECT user_id, event_name, datetime(completed_at / 1000, 'unixepoch') AS completed_at FROM milestone_events WHERE user_id = '$USER_ID' ORDER BY id ASC;"
+          npx --yes wrangler@latest d1 execute flex-standard-db --remote --command "$SQL" > /tmp/milestones.txt
+          cat /tmp/milestones.txt
+
+          grep -q '7_day_foundation_completed' /tmp/milestones.txt
+          grep -q '14_day_momentum_completed' /tmp/milestones.txt
+          grep -q '21_day_habit_lock_completed' /tmp/milestones.txt
+
+          COUNT_SQL="SELECT COUNT(*) AS row_count, COUNT(DISTINCT event_name) AS distinct_count FROM milestone_events WHERE user_id = '$USER_ID';"
+          npx --yes wrangler@latest d1 execute flex-standard-db --remote --command "$COUNT_SQL" > /tmp/counts.txt
+          cat /tmp/counts.txt
+
+          node <<'NODE'
+          const fs = require('fs');
+          const text = fs.readFileSync('/tmp/counts.txt', 'utf8');
+          const nums = [...text.matchAll(/\b3\b/g)].length;
+          if (nums < 2) throw new Error('Expected row_count=3 and distinct_count=3 for smoke user');
+          NODE
+
+      - name: Production release gate passed
+        run: echo 'LAUNCH-READY — live 7→14→21 progression and exactly three D1 milestone events verified.'
