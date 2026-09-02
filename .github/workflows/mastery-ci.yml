@@ -6,7 +6,11 @@ on:
       - 'src/mastery*.js'
       - 'test/mastery*.spec.js'
       - 'migrations/0003_mastery_v1.sql'
+      - 'migrations/0004_add_mastery_daily_action_tier.sql'
+      - 'migrations/0005_create_mastery_charters.sql'
+      - 'migrations/0007_mastery_charter_v2.sql'
       - 'docs/MASTERY_V1_*.md'
+      - 'docs/28-day-mastery-technical-spec.md'
       - '.github/workflows/mastery-ci.yml'
   workflow_dispatch:
 
@@ -26,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Validate Mastery Syntax
-        run: node --check src/masteryLogic.js && node --check src/masteryApi.js
+        run: node --check src/masteryCurriculum.js && node --check src/masteryLogic.js && node --check src/masteryApi.js && node --check src/masteryCharterApi.js && node --check src/masteryExperience.js && node --check src/masteryFeatureWrapper.js
 
       - name: Run Test Suite
         run: npm test

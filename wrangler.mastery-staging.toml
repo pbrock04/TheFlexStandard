@@ -1,0 +1,10 @@
+name = "the-flex-standard-mastery-staging"
+main = "src/freeFunnelReleaseWrapper.js"
+compatibility_date = "2026-08-18"
+account_id = "febd2c74daca8b517d14ab49d71873cf"
+workers_dev = true
+
+[vars]
+ENVIRONMENT = "staging"
+MASTERY_LAUNCH_MODE = "open"
+BREVO_LIST_FOUNDATION = "2"
