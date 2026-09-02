@@ -1,3 +1,4 @@
+# Validation trigger for challenge progression candidate; no deployment steps.
 name: Mastery Feature CI
 
 on:
