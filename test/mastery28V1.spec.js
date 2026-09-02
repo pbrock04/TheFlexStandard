@@ -105,6 +105,13 @@ describe('28-Day Mastery V1 contract', () => {
     expect(html).not.toMatch(/stripe|checkout|billing/i);
   });
 
+  it('visually holds the completed stage day while its review is pending', () => {
+    const html = mastery28Page();
+    expect(html).toContain('if(pending)viewDay=pending');
+    expect(html).toContain('Complete the stage review below to unlock the next stage.');
+    expect(html).toContain('b.disabled=Boolean(pending)');
+  });
+
   it('does not emit or reference any free-funnel milestone event', () => {
     const source = JSON.stringify(MASTERY_CURRICULUM) + mastery28Page();
     for (const event of FREE_MILESTONES) expect(source).not.toContain(event);
