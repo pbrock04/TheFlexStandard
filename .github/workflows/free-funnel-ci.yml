@@ -9,7 +9,11 @@ on:
       - 'src/identity.js'
       - 'src/milestones.js'
       - 'src/freeFunnelReleaseWrapper.js'
+      - 'src/brevo.js'
+      - 'src/v1LegalPages.js'
+      - 'src/v1LaunchWrapper.js'
       - 'test/freeFunnelRelease.spec.js'
+      - 'test/v1LaunchBlockers.spec.js'
       - 'migrations/0006_milestone_events.sql'
       - 'wrangler.toml'
       - '.github/workflows/free-funnel-ci.yml'
@@ -31,7 +35,7 @@ jobs:
         run: npm ci
 
       - name: Validate Free Funnel Syntax
-        run: node --check src/identity.js && node --check src/milestones.js && node --check src/freeFunnelReleaseWrapper.js
+        run: node --check src/identity.js && node --check src/milestones.js && node --check src/freeFunnelReleaseWrapper.js && node --check src/brevo.js && node --check src/v1LegalPages.js && node --check src/v1LaunchWrapper.js
 
       - name: Run Full Regression Suite
         run: npm test
