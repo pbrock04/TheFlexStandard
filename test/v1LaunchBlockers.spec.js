@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { normalizeBrevoContact, syncBrevoContact } from '../src/brevo.js';
 import { disclaimerPage, privacyPage, termsPage } from '../src/v1LegalPages.js';
+import launchApp from '../src/v1LaunchWrapper.js';
 
 describe('V1 launch blockers', () => {
   it('normalizes a Foundation contact for Brevo', () => {
@@ -52,5 +53,15 @@ describe('V1 launch blockers', () => {
       expect(page).toContain('href="/privacy"');
       expect(page).toContain('href="/terms"');
     }
+  });
+
+  it('injects legal links into delegated site HTML', async () => {
+    const response = await launchApp.fetch(new Request('https://theflexstandard.com/'), {}, { waitUntil: vi.fn() });
+    expect(response.ok).toBe(true);
+    const body = await response.text();
+    expect(body).toContain('data-flex-global-legal-links');
+    expect(body).toContain('href="/disclaimer"');
+    expect(body).toContain('href="/privacy"');
+    expect(body).toContain('href="/terms"');
   });
 });
