@@ -12,7 +12,7 @@ const html = body => new Response(body, {
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
-  headers: { 'content-type': 'application/json; charset=utf-8' },
+  headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
 });
 
 function pathOf(request) {
@@ -70,6 +70,15 @@ export default {
     }
     if (request.method === 'GET' && path === '/privacy') return html(privacyPage());
     if (request.method === 'GET' && path === '/terms') return html(termsPage());
+    if (request.method === 'GET' && path === '/api/email/status') {
+      return json({
+        ok: true,
+        provider: 'brevo',
+        configured: Boolean(env?.BREVO_API_KEY),
+        foundation_list_configured: Boolean(Number(env?.BREVO_LIST_FOUNDATION) > 0),
+        outbound_automation: 'disabled_phase_1a',
+      });
+    }
     if (request.method === 'POST' && path === '/api/subscribe') return subscribe(request, env);
 
     const lead = request.method === 'POST' && path === '/api/optional-lead'
