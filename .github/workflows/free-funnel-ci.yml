@@ -17,6 +17,7 @@ on:
       - 'migrations/0006_milestone_events.sql'
       - 'wrangler.toml'
       - '.github/workflows/free-funnel-ci.yml'
+      - '.github/workflows/production-free-funnel-smoke.yml'
   workflow_dispatch:
 
 jobs:
