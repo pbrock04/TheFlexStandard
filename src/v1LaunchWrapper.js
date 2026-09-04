@@ -19,6 +19,25 @@ function pathOf(request) {
   return new URL(request.url).pathname.replace(/\/$/, '') || '/';
 }
 
+async function addGlobalLegalFooter(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  const source = await response.text();
+  if (source.includes('data-flex-global-legal-links')) {
+    return new Response(source, { status: response.status, statusText: response.statusText, headers: response.headers });
+  }
+
+  const links = `<div data-flex-global-legal-links style="margin-top:.8rem;font-size:.78rem"><a href="/disclaimer">Disclaimer</a><span aria-hidden="true"> · </span><a href="/privacy">Privacy</a><span aria-hidden="true"> · </span><a href="/terms">Terms</a></div>`;
+  const patched = source.includes('</footer>')
+    ? source.replace('</footer>', `${links}</footer>`)
+    : source.replace('</body>', `<footer style="text-align:center;padding:1.5rem">${links}</footer></body>`);
+
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+  return new Response(patched, { status: response.status, statusText: response.statusText, headers });
+}
+
 async function readOptionalLead(request) {
   try {
     const body = await request.clone().json();
@@ -95,6 +114,6 @@ export default {
       else await task;
     }
 
-    return response;
+    return addGlobalLegalFooter(response);
   },
 };
