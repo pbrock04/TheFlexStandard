@@ -52,14 +52,21 @@ jobs:
           const context = await browser.newContext();
           const page = await context.newPage();
 
-          async function goto(path) {
+          async function gotoChallenge(path) {
             const response = await page.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 60000 });
             assert(response && response.ok(), `${path} returned ${response ? response.status() : 'no response'}`);
             const html = await page.content();
             assert(html.includes('data-flex-free-funnel-release-gate'), `${path} missing release-gate marker`);
           }
 
-          await goto('/challenges/7-day');
+          async function verifyLegal(path, marker) {
+            const response = await page.goto(base + path, { waitUntil: 'domcontentloaded', timeout: 60000 });
+            assert(response && response.ok(), `${path} returned ${response ? response.status() : 'no response'}`);
+            const text = await page.locator('body').innerText();
+            assert(text.includes(marker), `${path} missing expected legal marker: ${marker}`);
+          }
+
+          await gotoChallenge('/challenges/7-day');
           await page.evaluate(({ userId, completed }) => {
             localStorage.clear();
             localStorage.setItem('flexStandard.userId.v1', userId);
@@ -69,7 +76,7 @@ jobs:
           await page.waitForTimeout(1000);
           assert(await page.evaluate(() => localStorage.getItem('flexStandard.momentum14.unlocked') === 'true'), 'Foundation completion did not unlock Momentum');
 
-          await goto('/challenges/14-day');
+          await gotoChallenge('/challenges/14-day');
           assert(await page.locator('#challengeContent').isVisible(), 'Momentum remained locked after Foundation completion');
           await page.evaluate(completed => {
             localStorage.setItem('flexStandard.challenge14.v3', JSON.stringify({ completed }));
@@ -79,7 +86,7 @@ jobs:
           assert(await page.locator('#challengeContent').isVisible(), 'Momentum challenge content not visible after completion state reload');
           assert(await page.evaluate(() => localStorage.getItem('flexStandard.habit21.unlocked') === 'true'), 'Momentum completion did not unlock Habit Lock');
 
-          await goto('/challenges/21-day');
+          await gotoChallenge('/challenges/21-day');
           assert(await page.locator('#challengeContent').isVisible(), 'Habit Lock remained locked after Momentum completion');
           await page.evaluate(completed => {
             localStorage.setItem('flexStandard.challenge21.v2', JSON.stringify({ completed }));
@@ -89,7 +96,15 @@ jobs:
           assert(await page.locator('#challengeContent').isVisible(), 'Habit Lock content not visible after completion state reload');
           assert(await page.locator('#completion').isVisible(), 'Day 21 completion card is not visible');
 
-          console.log(`Production browser progression smoke passed for ${userId}`);
+          await verifyLegal('/disclaimer', 'HEALTH & PHYSICAL ACTIVITY DISCLAIMER');
+          await verifyLegal('/privacy', 'PRIVACY POLICY');
+          await verifyLegal('/terms', 'TERMS OF SERVICE');
+
+          const emailStatus = await page.request.get(base + '/api/email/status');
+          assert(emailStatus.ok(), `/api/email/status returned ${emailStatus.status()}`);
+          console.log('Email status:', await emailStatus.text());
+
+          console.log(`Production browser progression + legal smoke passed for ${userId}`);
           await browser.close();
           NODE
 
@@ -113,4 +128,4 @@ jobs:
           grep -Eq 'distinct_count[^0-9]*3' /tmp/counts.txt
 
       - name: Production release gate passed
-        run: echo 'LAUNCH-READY — live 7→14→21 progression and exactly three D1 milestone events verified.'
+        run: echo 'LAUNCH-READY — live 7→14→21 progression, legal routes, email-status endpoint, and exactly three D1 milestone events verified.'

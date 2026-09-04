@@ -1,5 +1,5 @@
 name = "the-flex-standard"
-main = "src/freeFunnelReleaseWrapper.js"
+main = "src/v1LaunchWrapper.js"
 compatibility_date = "2026-08-18"
 account_id = "febd2c74daca8b517d14ab49d71873cf"
 
